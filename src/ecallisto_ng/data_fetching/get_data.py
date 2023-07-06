@@ -3,10 +3,10 @@ import time
 import pandas as pd
 import requests
 
-BASE_URL = "https://v000792.fhnw.ch/"
+BASE_URL = "https://v000792.fhnw.ch"
 
 
-def get_data(instrument_name, start_datetime, end_datetime, timebucket=None, agg_function=None, return_type='json'):
+def get_data(instrument_name, start_datetime, end_datetime, timebucket=None, agg_function=None, return_type='json', verbose=False):
     """
     Get data from the eCallisto API. See: https://v000792.fhnw.ch/api/redoc
     Of course, this is just a wrapper around the requests.post function. 
@@ -30,6 +30,8 @@ def get_data(instrument_name, start_datetime, end_datetime, timebucket=None, agg
         The type of data to return. Either 'json' or 'fits'. If 'json', the
         data is returned as a pandas DataFrame. If 'fits', the data is
         downloaded as a fits file and the filename is returned.
+    verbose : bool
+        Whether to print out the response from the API.
     Returns
     -------
     pandas.DataFrame
@@ -44,12 +46,11 @@ def get_data(instrument_name, start_datetime, end_datetime, timebucket=None, agg
         "return_type": return_type
     }
 
-    response = requests.post(BASE_URL + "api/data", json=data, timeout=180)
-    print(response.status_code)
-    print(response.text)
+    response = requests.post(BASE_URL + "/api/data", json=data, timeout=180)
 
     if response.status_code == 200:
-        url = BASE_URL + response.json()['json_url'] if return_type=='json' else response.json()['fits_url']
+        url = response.json()['json_url'] if return_type=='json' else response.json()['fits_url']
+        url = BASE_URL + url
         while True:
             # Sleep for a short period of time to allow the data to be fetched
             time.sleep(5)
@@ -61,9 +62,10 @@ def get_data(instrument_name, start_datetime, end_datetime, timebucket=None, agg
                     df = pd.DataFrame(file_response.json())
                     return df
                 else:
-                    with open(f'{instrument_name}_{start_datetime}_{end_datetime}.fits', 'wb') as f:
+                    fits_path = f'{instrument_name}_{start_datetime}_{end_datetime}.fits'
+                    with open(fits_path, 'wb') as f:
                         f.write(file_response.content)
-                    return f"{instrument_name}_{start_datetime}_{end_datetime}.fits is downloaded."
+                    return fits_path
             elif file_response.status_code == 404:
                 # If the file is not found, continue waiting
                 continue
