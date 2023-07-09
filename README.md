@@ -1,6 +1,6 @@
 # Ecallisto NG 
 ## Ecallisto NG is a very basic and simple package to access the Ecallisto API. 
-## It is written in Python 3.7 and uses the requests library and accesses the Ecallisto API at https://v000792.fhnw.ch/api/data
+## It is written in Python 3.9 and uses the requests library and accesses the Ecallisto API at https://v000792.fhnw.ch/api/data
 
 ## Installation
 Clone this repository and install it with pip:
@@ -21,6 +21,7 @@ parameters = {
 
 df = get_data(parameters)
 ```
+
 ### Plotting 
 We offer some basic plotting functions. 
 ```python
