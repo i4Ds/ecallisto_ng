@@ -1,6 +1,6 @@
 [project]
 name = "ecallisto_ng"
-version = "0.0.3"
+version = "0.0.4"
 authors = [{name = "Vincenzo Timmel", email = "vincenzo.timmel@fhnw.ch"}]
 description = "A Python package for the fetching (and some processing) of eCallisto data via the eCallisto API."
 readme = "README.md"
@@ -19,6 +19,7 @@ dependencies = [
     'pandas>=2.0.3',
     'plotly>=5.15.0',
     'requests>=2.31.0',
+    'scikit-image>=0.21.0',
 
 ]
 

@@ -3,8 +3,12 @@ import pandas as pd
 import plotly.express as px
 
 
-def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18):
-    fig = px.imshow(df.T)
+def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, round_precision=2):
+    # Create a new dataframe with rounded column names
+    df_rounded = df.copy()
+    df_rounded.columns = [f"{float(col):.{round_precision}f}" for col in df.columns]
+
+    fig = px.imshow(df_rounded.T)
     fig.update_layout(
         title=f"Spectogram of {instrument_name} from {start_datetime} to {end_datetime}",
         xaxis_title="Datetime",
@@ -13,10 +17,9 @@ def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18):
     )
     return fig
 
-
 def fill_missing_timesteps_with_nan(df):
     """
-    Fill missing timesteps in a pandas DataFrame with NaN values.
+    Fill missing timesteps in a pandas DataFrame with NaN values. Only needed for plotting.
 
     Parameters
     ----------

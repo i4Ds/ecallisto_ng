@@ -3,7 +3,7 @@
 ## It is written in Python 3.9 and uses the requests library and accesses the Ecallisto API at https://v000792.fhnw.ch/api/data
 
 ## Installation
-Clone this repository and install it with pip:
+Clone this repository and install it with pip
 ```pip install -e .```
 ## PYPI
 This package is also available on PYPI: https://pypi.org/project/ecallisto-ng/
