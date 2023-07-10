@@ -47,9 +47,9 @@ def fill_missing_timesteps_with_nan(df):
     >>> freqs = ['10M', '20M', '30M']
     >>> data = np.random.randn(len(dates), len(freqs))
     >>> df = pd.DataFrame(data, index=dates, columns=freqs)
+    >>> df = df.drop(df.index[1])
     >>> df = fill_missing_timesteps_with_nan(df)
     >>> print(df)
-
                             10M       20M       30M
     2023-02-19 01:00:00 -0.349636  0.004947  0.546848
     2023-02-19 03:00:00       NaN       NaN       NaN
