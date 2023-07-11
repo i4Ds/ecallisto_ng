@@ -1,6 +1,6 @@
 # Ecallisto NG 
 Ecallisto NG is a compact yet effective Python package designed to facilitate seamless interaction with the Ecallisto API. 
-The package is constructed in Python 3.9 and utilizes the `requests` library to directly access the Ecallisto API via the link: [https://v000792.fhnw.ch/api/data](https://v000792.fhnw.ch/api/data).
+The package is constructed in Python 3.9 and utilizes the `requests` library to directly access the Ecallisto API via the link: [https://v000792.fhnw.ch/api/redoc](https://v000792.fhnw.ch/api/redoc).
 
 ## Installation
 To install this package, clone this repository and use pip for installation. Execute the following command in your terminal:
@@ -30,6 +30,21 @@ parameters = {
 }
 
 df = get_data(**parameters)
+```
+
+### Getting Data Availability
+You can also check the availability of data using the `get_tables` and `get_table_names_with_data_between_dates` function, housed under the `ecallisto_ng.data_fetching.get_information` module. Here's an example:
+
+```python
+from ecallisto_ng.data_fetching.get_information import get_tables, get_table_names_with_data_between_dates
+from datetime import datetime, timedelta
+
+get_tables()[:5]
+
+get_table_names_with_data_between_dates(
+    start_datetime=(datetime.now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S"),
+    end_datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+)
 ```
 
 ### Plotting 

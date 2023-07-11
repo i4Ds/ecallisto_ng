@@ -54,6 +54,10 @@ def get_data(
         "return_type": return_type,
     }
 
+    assert pd.to_datetime(start_datetime) < pd.to_datetime(end_datetime), (
+        f"start_datetime ({start_datetime}) must be before end_datetime ({end_datetime})"
+    )
+
     response = requests.post(BASE_URL + "/api/data", json=data, timeout=180)
 
     if response.status_code == 200:
@@ -70,6 +74,9 @@ def get_data(
             file_response = requests.get(url)
             if file_response.status_code == 200:
                 # If the file is available, return the data
+                respone_json = file_response.json()
+                if 'error' in respone_json.keys():
+                    raise ValueError(respone_json['error'])
                 if return_type == "json":
                     df = pd.DataFrame(file_response.json())
                     return df
@@ -87,3 +94,4 @@ def get_data(
                 raise ValueError(f"Error getting file from API: {file_response.text}")
     else:
         raise ValueError(f"Error getting data from API: {response.text}")
+
