@@ -6,7 +6,8 @@ from skimage import filters
 def elimwrongchannels(df, channel_std_mult=5, jump_std_mult=2):
     """
     Remove Radio Frequency Interference (RFI) from a spectrogram represented by a pandas DataFrame.
-
+    This function currently does not work when there is missing data. So it should be used before the function
+    `fill_missing_timesteps_with_nan`.
     Parameters
     ----------
     df : pandas.DataFrame
@@ -86,7 +87,7 @@ def subtract_constant_background(df, n=30):
     return df - df.iloc[0:n].median()
 
 
-def subtract_rolling_background(df, window=30, how="quantile", quantile_value=0.05):
+def subtract_rolling_background(df, window=30, center=False, how="quantile", quantile_value=0.05, **kwargs):
     """
     Subtract a rolling background from a spectrogram represented by a pandas DataFrame.
 
@@ -98,11 +99,16 @@ def subtract_rolling_background(df, window=30, how="quantile", quantile_value=0.
         Input DataFrame where the index represents time and the columns represent frequency channels.
     window : int, default 30
         Size of the rolling window from which the background value is calculated.
+    center : bool, default False
+        If True, the rolling window is centered on the current timepoint. If False, the rolling window starts at the current timepoint.
+        See pandas.DataFrame.rolling for more details.
     how : str, default "median"
         Method to calculate the rolling background. If "median", the median value of the window is used.
         If "quantile", the quantile defined by `quantile_value` is used.
     quantile_value : float, default 0.5
         The quantile value to use when `how` is "quantile". Ignored if `how` is not "quantile".
+    **kwargs : dict
+        Additional keyword arguments passed to pandas.DataFrame.rolling.
 
     Returns
     -------
@@ -112,9 +118,9 @@ def subtract_rolling_background(df, window=30, how="quantile", quantile_value=0.
     """
     df = df.copy()
     if how == "median":
-        df_rolling = df.rolling(window=window).median()
+        df_rolling = df.rolling(window=window, center=center, **kwargs).median()
     elif how == "quantile":
-        df_rolling = df.rolling(window=window).quantile(quantile_value)
+        df_rolling = df.rolling(window=window, center=center, **kwargs).quantile(quantile_value)
     else:
         raise ValueError("`how` must be 'median' or 'quantile'")
     return df - df_rolling
