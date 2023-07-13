@@ -51,7 +51,7 @@ def get_table_names_with_data_between_dates(start_datetime, end_datetime, verbos
         "end_datetime": end_datetime,
     }
 
-    assert pd.to_datetime(start_datetime) < pd.to_datetime(end_datetime), (
+    assert pd.to_datetime(start_datetime) <= pd.to_datetime(end_datetime), (
         f"start_datetime ({start_datetime}) must be before end_datetime ({end_datetime})"
     )
 

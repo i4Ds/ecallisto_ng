@@ -1,3 +1,4 @@
+import os
 import time
 
 import pandas as pd
@@ -95,3 +96,82 @@ def get_data(
     else:
         raise ValueError(f"Error getting data from API: {response.text}")
 
+
+# Because of SQL limitation, the names of the tables do not perfectly match the instrument names.
+# This function converts the instrument name to the table name.
+def extract_instrument_name(file_path):
+    """
+    Because of SQL limitation, the names of the tables do not perfectly match the instrument names.
+    This function converts the instrument name to the table name.
+
+    Parameters
+    ----------
+    file_path : str
+        The file path to extract the instrument name from.
+
+    Returns
+    -------
+    str
+        The extracted instrument name, converted to lowercase with underscores in place of hyphens.
+
+    Example
+    -------
+    >>> extract_instrument_name('/var/lib/ecallisto/2023/01/27/ALASKA-COHOE_20230127_001500_612.fit.gz')
+    'alaska_cohoe_612'
+
+    Notes
+    -----
+    The function first selects the last part of the file path and removes the extension.
+    Then, it replaces hyphens with underscores and splits on underscores to get the parts of the file name.
+    The function concatenates these parts, adding a numeric part of the file name if it is less than 6 digits.
+    """
+    # select last part of path and remove extension
+    file_name_parts = os.path.basename(file_path).split(".")[0]
+    # replace '-' with '_' and split on '_' to get the parts of the file name
+    file_name_parts = file_name_parts.replace("-", "_").lower().split("_")
+    file_name = ""
+    for part in file_name_parts:
+        if not part.isnumeric():
+            file_name += "_" + part
+    if (
+        len(file_name_parts[-1]) < 6 and file_name_parts[-1].isnumeric()
+    ):  # Sometimes, the last part is an ID number for when the station has multiple instruments.
+        # We want to add this to the file name if it's not a time (6 digits).
+        file_name = file_name + "_" + file_name_parts[-1]
+
+    return file_name[1:]  # Remove the first '-'
+
+
+def reverse_extract_instrument_name(instrument_name, include_number=False):
+    """
+    Because of SQL limitation, the names of the tables do not perfectly match the instrument names.
+    Convert a lower-case instrument name with underscores to its original hyphenated form.
+
+    Parameters
+    ----------
+    instrument_name : str
+        The instrument name in lower-case with underscores.
+    include_number : bool, optional
+        Whether to include the last number in the output or not. Default is False.
+
+    Returns
+    -------
+    str
+        The original instrument name with hyphens.
+
+    Example
+    -------
+    >>> reverse_extract_instrument_name('alaska_cohoe_612')
+    'ALASKA-COHOE'
+    >>> reverse_extract_instrument_name('alaska_cohoe_612', include_number=True)
+    'ALASKA-COHOE_612'
+
+    """
+    # Replace underscores with hyphens and upper all the letters
+    parts = [part.upper() for part in instrument_name.split("_")]
+    if not include_number:
+        # Remove the last part if it's a number
+        if parts[-1].isnumeric():
+            parts.pop()
+    # Join the parts with hyphens and return the result
+    return "-".join(parts)
