@@ -55,7 +55,7 @@ def get_data(
         "return_type": return_type,
     }
 
-    assert pd.to_datetime(start_datetime) < pd.to_datetime(end_datetime), (
+    assert pd.to_datetime(start_datetime) <= pd.to_datetime(end_datetime), (
         f"start_datetime ({start_datetime}) must be before end_datetime ({end_datetime})"
     )
 
