@@ -12,9 +12,7 @@ def get_data(
     start_datetime,
     end_datetime,
     timebucket=None,
-    agg_function=None,
-    return_type="json",
-    verbose=False,
+    agg_function=None
 ):
     """
     Get data from the eCallisto API. See: https://v000792.fhnw.ch/api/redoc
@@ -35,10 +33,6 @@ def get_data(
         "timebucket" function)
     agg_function : str
         The aggregation function to use (see timescaledb "timebucket" function)
-    return_type : str
-        The type of data to return. Either 'json' or 'fits'. If 'json', the
-        data is returned as a pandas DataFrame. If 'fits', the data is
-        downloaded as a fits file and the filename is returned.
     verbose : bool
         Whether to print out the response from the API.
     Returns
@@ -51,50 +45,43 @@ def get_data(
         "start_datetime": start_datetime,
         "end_datetime": end_datetime,
         "timebucket": timebucket,
-        "agg_function": agg_function,
-        "return_type": return_type,
+        "agg_function": agg_function
     }
 
     assert pd.to_datetime(start_datetime) <= pd.to_datetime(end_datetime), (
         f"start_datetime ({start_datetime}) must be before end_datetime ({end_datetime})"
     )
 
+    file_path = f"{instrument_name}_{start_datetime}_{end_datetime}_{timebucket}_{agg_function}.parquet"
+    if os.path.exists(file_path):
+        print(f"Reading data from {file_path}")
+        return pd.read_parquet(file_path)
     response = requests.post(BASE_URL + "/api/data", json=data, timeout=180)
 
+    # Check if the request was successful
     if response.status_code == 200:
-        url = (
-            response.json()["json_url"]
-            if return_type == "json"
-            else response.json()["fits_url"]
-        )
-        url = BASE_URL + url
+        # Get the URL for the parquet file
+        parquet_url = response.json()["data_parquet_url"]
+
+        # Now we can start polling the URL until the parquet file is ready for download
         while True:
-            # Sleep for a short period of time to allow the data to be fetched
-            time.sleep(5)
-            # Check if the file is available yet
-            file_response = requests.get(url)
+            # Try to download the parquet file
+            file_response = requests.get(BASE_URL + parquet_url)
+            
+            # If the file is available, save it to disk
             if file_response.status_code == 200:
-                # If the file is available, return the data
-                respone_json = file_response.json()
-                if 'error' in respone_json.keys():
-                    raise ValueError(respone_json['error'])
-                if return_type == "json":
-                    df = pd.DataFrame(file_response.json())
-                    return df
-                else:
-                    fits_path = (
-                        f"{instrument_name}_{start_datetime}_{end_datetime}.fits"
-                    )
-                    with open(fits_path, "wb") as f:
-                        f.write(file_response.content)
-                    return fits_path
+                with open(file_path, "wb") as f:
+                    f.write(file_response.content)
+                return pd.read_parquet(file_path)
             elif file_response.status_code == 404:
-                # If the file is not found, continue waiting
-                continue
+                # If the file is not found, sleep for a short period and try again
+                print("File not ready yet, waiting...")
+                time.sleep(5)
             else:
-                raise ValueError(f"Error getting file from API: {file_response.text}")
+                print(f"Error downloading file: {file_response.status_code}")
+                break
     else:
-        raise ValueError(f"Error getting data from API: {response.text}")
+        print(f"Error starting data retrieval: {response.status_code}")
 
 
 # Because of SQL limitation, the names of the tables do not perfectly match the instrument names.
