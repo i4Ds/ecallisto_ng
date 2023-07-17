@@ -52,6 +52,11 @@ def get_data(
         f"start_datetime ({start_datetime}) must be before end_datetime ({end_datetime})"
     )
 
+    # Clean up dates to make it compatible with windows
+    start_datetime = start_datetime.replace(":", "-")
+    end_datetime = end_datetime.replace(":", "-")
+
+    # Create file path
     file_path = f"{instrument_name}_{start_datetime}_{end_datetime}_{timebucket}_{agg_function}.parquet"
     if os.path.exists(file_path):
         print(f"Reading data from {file_path}")
