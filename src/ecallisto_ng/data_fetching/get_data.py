@@ -102,7 +102,7 @@ def get_data(
                             print(f"File {file_id} not ready yet, waiting...")
                         time.sleep(5)
                     else:
-                        raise ValueError(f"Error downloading file: {json_response.json()['error']}")
+                        raise ValueError(f"Error downloading file: {json_response.json()['status']}")
                 elif 'error' in json_response.json():
                     raise ValueError(f"Error downloading file: {json_response.json()['error']}")
             else:
