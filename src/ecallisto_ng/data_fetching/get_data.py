@@ -12,7 +12,8 @@ def get_data(
     start_datetime,
     end_datetime,
     timebucket=None,
-    agg_function=None
+    agg_function=None,
+    data_folder='ecallisto_ng_cache'
 ):
     """
     Get data from the eCallisto API. See: https://v000792.fhnw.ch/api/redoc
@@ -33,8 +34,8 @@ def get_data(
         "timebucket" function)
     agg_function : str
         The aggregation function to use (see timescaledb "timebucket" function)
-    verbose : bool
-        Whether to print out the response from the API.
+    ecallisto_ng_cache : str
+        Where to save the cached data.
     Returns
     -------
     pandas.DataFrame
@@ -57,7 +58,8 @@ def get_data(
     end_datetime = end_datetime.replace(":", "-")
 
     # Create file path
-    file_path = f"{instrument_name}_{start_datetime}_{end_datetime}_{timebucket}_{agg_function}.parquet"
+    file_path = os.path.join(data_folder, f"{instrument_name}_{start_datetime}_{end_datetime}_{timebucket}_{agg_function}.parquet")
+    os.makedirs(data_folder, exist_ok=True)
     if os.path.exists(file_path):
         print(f"Reading data from {file_path}")
         return pd.read_parquet(file_path)
@@ -67,14 +69,22 @@ def get_data(
     if response.status_code == 200:
         # Get the URL for the parquet file
         parquet_url = response.json()["data_parquet_url"]
+        json_url = response.json()["info_json_url"]
 
         # Now we can start polling the URL until the parquet file is ready for download
         while True:
             # Try to download the parquet file
             file_response = requests.get(BASE_URL + parquet_url)
+            json_respone = requests.get(BASE_URL + json_url)
             
             # If the file is available, save it to disk
             if file_response.status_code == 200:
+                content_type = file_response.headers['Content-Type']
+                if content_type == 'application/json': # typical content-type for binary data, adjust if necessary
+                    print("Recieved json instead of parquet. This is usually because of an Error.")
+                    raise ValueError(json_respone.content)
+
+                # Check if file is not a json
                 with open(file_path, "wb") as f:
                     f.write(file_response.content)
                 return pd.read_parquet(file_path)
