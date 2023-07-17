@@ -13,7 +13,8 @@ def get_data(
     end_datetime,
     timebucket=None,
     agg_function=None,
-    data_folder='ecallisto_ng_cache'
+    data_folder='ecallisto_ng_cache',
+    verbose=False
 ):
     """
     Get data from the eCallisto API. See: https://v000792.fhnw.ch/api/redoc
@@ -34,8 +35,10 @@ def get_data(
         "timebucket" function)
     agg_function : str
         The aggregation function to use (see timescaledb "timebucket" function)
-    ecallisto_ng_cache : str
+    data_folder : str
         Where to save the cached data.
+    verbose : bool
+        Whether to print the progress or not.
     Returns
     -------
     pandas.DataFrame
@@ -63,37 +66,49 @@ def get_data(
     if os.path.exists(file_path):
         print(f"Reading data from {file_path}")
         return pd.read_parquet(file_path)
+    
+    # Send the request to the API
     response = requests.post(BASE_URL + "/api/data", json=data, timeout=180)
 
     # Check if the request was successful
     if response.status_code == 200:
+        if verbose:
+            print("Data retrieval started successfully. Waiting for file to be ready...")
         # Get the URL for the parquet file
         parquet_url = response.json()["data_parquet_url"]
         json_url = response.json()["info_json_url"]
+        file_id = response.json()["file_id"]
 
         # Now we can start polling the URL until the parquet file is ready for download
         while True:
+            if verbose:
+                print(f"Trying to download file {file_id}")
             # Try to download the parquet file
             file_response = requests.get(BASE_URL + parquet_url)
-            json_respone = requests.get(BASE_URL + json_url)
-            
             # If the file is available, save it to disk
             if file_response.status_code == 200:
-                content_type = file_response.headers['Content-Type']
-                if content_type == 'application/json': # typical content-type for binary data, adjust if necessary
-                    print("Recieved json instead of parquet. This is usually because of an Error.")
-                    raise ValueError(json_respone.content)
-
-                # Check if file is not a json
+                print("File downloaded successfully")
                 with open(file_path, "wb") as f:
                     f.write(file_response.content)
                 return pd.read_parquet(file_path)
-            elif file_response.status_code == 404:
-                # If the file is not found, sleep for a short period and try again
-                print("File not ready yet, waiting...")
-                time.sleep(5)
+            elif file_response.status_code == 204:
+                # Check if the file creation causes any errors
+                json_response = requests.get(BASE_URL + json_url)
+                # Check the status of the json 
+                if 'status' in json_response.json():
+                    if json_response.json()['status'] == 'processing':
+                        # If the file is not found, sleep for a short period and try again
+                        if verbose:
+                            print(f"File {file_id} not ready yet, waiting...")
+                        time.sleep(5)
+                    else:
+                        raise ValueError(f"Error downloading file: {json_response.json()['error']}")
+                elif 'error' in json_response.json():
+                    raise ValueError(f"Error downloading file: {json_response.json()['error']}")
             else:
                 print(f"Error downloading file: {file_response.status_code}")
+                json_response = requests.get(BASE_URL + json_url)
+                print(json_response.json())
                 break
     else:
         print(f"Error starting data retrieval: {response.status_code}")
