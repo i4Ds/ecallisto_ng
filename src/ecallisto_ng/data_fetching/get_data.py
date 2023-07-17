@@ -66,7 +66,7 @@ def get_data(
     if os.path.exists(file_path):
         print(f"Reading data from {file_path}")
         return pd.read_parquet(file_path)
-    
+
     # Send the request to the API
     response = requests.post(BASE_URL + "/api/data", json=data, timeout=180)
 
