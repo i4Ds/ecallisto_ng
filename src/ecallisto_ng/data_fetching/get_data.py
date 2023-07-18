@@ -102,7 +102,7 @@ def get_data(
                         if verbose:
                             print(f"File {file_id} not ready yet, waiting...")
                         time.sleep(5)
-                    elif json_response.json['status'] == 'ok':
+                    elif json_response.json()['status'] == 'ok':
                         if verbose:
                             print(f'File {file_id} succesfully written! Will return file')
                     else:
