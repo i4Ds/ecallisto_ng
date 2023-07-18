@@ -12,7 +12,7 @@ def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, 
     sd_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
     ed_str = end_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
-    ## Trick to make NANs appear black
+    # Trick to make NANs appear black
     # Replace NaNs with -1
     df_rounded.fillna(-1, inplace=True)
     # Add black for NANS

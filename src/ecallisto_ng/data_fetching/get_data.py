@@ -93,6 +93,7 @@ def get_data(
                 return pd.read_parquet(file_path)
             elif file_response.status_code == 204:
                 # Check if the file creation causes any errors
+                # This json contains information about the request
                 json_response = requests.get(BASE_URL + json_url)
                 # Check the status of the json 
                 if 'status' in json_response.json():
@@ -101,6 +102,9 @@ def get_data(
                         if verbose:
                             print(f"File {file_id} not ready yet, waiting...")
                         time.sleep(5)
+                    elif json_response.json['status'] == 'ok':
+                        if verbose:
+                            print(f'File {file_id} succesfully written! Will return file')
                     else:
                         raise ValueError(f"Error downloading file: {json_response.json()['status']}")
                 elif 'error' in json_response.json():
