@@ -3,14 +3,24 @@ import pandas as pd
 import plotly.express as px
 
 
-def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, round_precision=2):
+def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, round_precision=1, color_scale=px.colors.sequential.Plasma):
     # Create a new dataframe with rounded column names
     df_rounded = df.copy()
     df_rounded.columns = [f"{float(col):.{round_precision}f}" for col in df.columns]
 
-    fig = px.imshow(df_rounded.T)
+    # Make datetime prettier
+    sd_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    ed_str = end_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+    ## Trick to make NANs appear black
+    # Replace NaNs with -1
+    df_rounded.fillna(-1, inplace=True)
+    # Add black for NANS
+    color_scale.insert(0, "black")
+
+    fig = px.imshow(df_rounded.T, color_continuous_scale=color_scale, zmin=df.min().min(), zmax=df.max().max())
     fig.update_layout(
-        title=f"Spectogram of {instrument_name} from {start_datetime} to {end_datetime}",
+        title=f"Spectogram of {instrument_name} between {sd_str} and {ed_str}",
         xaxis_title="Datetime",
         yaxis_title="Frequency",
         font=dict(family="Courier New, monospace", size=size, color="#7f7f7f"),
