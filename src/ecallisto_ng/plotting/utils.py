@@ -9,14 +9,12 @@ def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, 
     df_rounded.columns = [f"{float(col):.{round_precision}f}" for col in df.columns]
 
     # Make datetime prettier
+    if isinstance(start_datetime, str):
+        start_datetime = pd.to_datetime(start_datetime)
+    if isinstance(end_datetime, str):
+        end_datetime = pd.to_datetime(end_datetime)
     sd_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
     ed_str = end_datetime.strftime("%Y-%m-%d %H:%M:%S")
-
-    # Trick to make NANs appear black
-    # Replace NaNs with -1
-    df_rounded.fillna(-1, inplace=True)
-    # Add black for NANS
-    color_scale.insert(0, "black")
 
     fig = px.imshow(df_rounded.T, color_continuous_scale=color_scale, zmin=df.min().min(), zmax=df.max().max())
     fig.update_layout(
@@ -24,6 +22,9 @@ def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, 
         xaxis_title="Datetime",
         yaxis_title="Frequency",
         font=dict(family="Courier New, monospace", size=size, color="#7f7f7f"),
+        plot_bgcolor="black",
+        xaxis_showgrid=False,
+        yaxis_showgrid=False,
     )
     return fig
 

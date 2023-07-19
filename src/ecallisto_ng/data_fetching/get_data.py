@@ -14,7 +14,8 @@ def get_data(
     timebucket=None,
     agg_function=None,
     data_folder='ecallisto_ng_cache',
-    verbose=False
+    verbose=False,
+    max_retries=3,
 ):
     """
     Get data from the eCallisto API. See: https://v000792.fhnw.ch/api/redoc
@@ -39,6 +40,8 @@ def get_data(
         Where to save the cached data.
     verbose : bool
         Whether to print the progress or not.
+    max_retries : int
+        The maximum number of retries to download the data.
     Returns
     -------
     pandas.DataFrame
@@ -80,40 +83,57 @@ def get_data(
         file_id = response.json()["file_id"]
 
         # Now we can start polling the URL until the parquet file is ready for download
+        n_tries = 0
         while True:
-            if verbose:
-                print(f"Trying to download file {file_id}")
-            # Try to download the parquet file
-            file_response = requests.get(BASE_URL + parquet_url)
-            # If the file is available, save it to disk
-            if file_response.status_code == 200:
-                print("File downloaded successfully")
-                with open(file_path, "wb") as f:
-                    f.write(file_response.content)
-                return pd.read_parquet(file_path)
-            elif file_response.status_code == 204:
-                # Check if the file creation causes any errors
-                # This json contains information about the request
-                json_response = requests.get(BASE_URL + json_url)
-                # Check the status of the json 
-                if 'status' in json_response.json():
-                    if json_response.json()['status'] == 'processing':
-                        # If the file is not found, sleep for a short period and try again
-                        if verbose:
-                            print(f"File {file_id} not ready yet, waiting...")
-                        time.sleep(5)
-                    elif json_response.json()['status'] == 'ok':
-                        if verbose:
-                            print(f'File {file_id} succesfully written! Will return file')
+            try:
+                if verbose:
+                    print(f"Trying to download file {file_id}")
+                # Try to download the parquet file
+                file_response = requests.get(BASE_URL + parquet_url)
+                # If the file is available, save it to disk
+                if file_response.status_code == 200:
+                    print("File downloaded successfully")
+                    with open(file_path, "wb") as f:
+                        f.write(file_response.content)
+                    # Check that the file is bigger than 8 bytes (sometimes, the API returns an empty file)
+                    if os.path.getsize(file_path) > 8:
+                        # Return the file as a DataFrame  
+                        return pd.read_parquet(file_path)
                     else:
-                        raise ValueError(f"Error downloading file: {json_response.json()['status']}")
-                elif 'error' in json_response.json():
-                    raise ValueError(f"Error downloading file: {json_response.json()['error']}")
-            else:
-                print(f"Error downloading file: {file_response.status_code}")
-                json_response = requests.get(BASE_URL + json_url)
-                print(json_response.json())
-                break
+                        # Remove file and try again
+                        os.remove(file_path)
+                        raise ValueError(f"Error downloading file: {file_response.status_code}. File is empty.")
+                elif file_response.status_code == 204:
+                    # Check if the file creation causes any errors
+                    json_response = requests.get(BASE_URL + json_url) # This json contains information about your data request (e.g. status)
+                    # Check the status of the json 
+                    if 'status' in json_response.json():
+                        if json_response.json()['status'] == 'processing':
+                            # If the file is not found, sleep for a short period and try again
+                            if verbose:
+                                print(f"File {file_id} not ready yet, waiting...")
+                            time.sleep(3)
+                        elif json_response.json()['status'] == 'ok':
+                            if verbose:
+                                print(f'File {file_id} succesfully written! Will return file.')
+                        else:
+                            raise ValueError(f"Error downloading file: {json_response.json()['status']}")
+                    elif 'error' in json_response.json():
+                        raise ValueError(f"Error downloading file: {json_response.json()['error']}")
+                else:
+                    print(f"Error downloading file: {file_response.status_code}")
+                    json_response = requests.get(BASE_URL + json_url)
+                    print(json_response.json())
+                    break
+            except Exception as e:
+                print(
+                    f"""Error downloading file: {e}. Try {n_tries} of {max_retries}. Retrying in 3 seconds...
+                    """
+                    )
+                n_tries += 1
+                if n_tries > max_retries:
+                    raise ValueError(f"Error downloading file: {file_response.status_code}. Max retries reached.")
+                time.sleep(3)
     else:
         print(f"Error starting data retrieval: {response.status_code}")
 
