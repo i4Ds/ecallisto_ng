@@ -69,4 +69,3 @@ df = subtract_rolling_background(df)
 plot_spectogram(df,  parameters["instrument_name"], parameters["start_datetime"], parameters["end_datetime"])
 ```
 These simple commands allow you to easily manipulate spectogram data, enabling effective use of the Ecallisto API for your needs.
-Be careful when using `elimwrongchannels` after `fill_missing_timesteps_with_nan`.

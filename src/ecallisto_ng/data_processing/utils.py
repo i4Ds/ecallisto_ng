@@ -3,11 +3,11 @@ import pandas as pd
 from skimage import filters
 
 
-def elimwrongchannels(df, channel_std_mult=5, jump_std_mult=2):
+def elimwrongchannels(df, channel_std_mult=5, jump_std_mult=2, nan_interpolation_method='pchip'):
     """
     Remove Radio Frequency Interference (RFI) from a spectrogram represented by a pandas DataFrame.
-    This function currently does not work when there is missing data. So it should be used before the function
-    `fill_missing_timesteps_with_nan`.
+    This function works even when there is missing data thanks to interpolation of missing values.
+    However, it could lead to some false or different results.
     Parameters
     ----------
     df : pandas.DataFrame
@@ -28,6 +28,14 @@ def elimwrongchannels(df, channel_std_mult=5, jump_std_mult=2):
 
     """
     df = df.copy()
+
+    # Store original NaN positions
+    nan_positions = df.isna()
+
+    # Fill missing data with interpolation
+    df.interpolate(method=nan_interpolation_method, inplace=True)
+    df.fillna(method='bfill', inplace=True)  # for cases where NaNs are at the start of a series
+
     # Transpose df so that rows represent channels and columns represent time
     df = df.T
 
@@ -61,6 +69,10 @@ def elimwrongchannels(df, channel_std_mult=5, jump_std_mult=2):
 
     # Transpose df back to original orientation
     df = df.T
+
+    # Bring back original NaN values
+    df[nan_positions] = np.nan
+
     return df
 
 
