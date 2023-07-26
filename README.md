@@ -1,6 +1,9 @@
 # Ecallisto NG 
-Ecallisto NG is a compact yet effective Python package designed to facilitate seamless interaction with the Ecallisto API (Rest API built with FastAPI). It provides a simple interface to fetch data from the API, as well as some basic data processing and plotting capabilities.
+Ecallisto NG is a compact yet effective Python package designed to facilitate seamless interaction with the Ecallisto API (Rest API built with FastAPI). It provides a simple interface to fetch data from the API, as well as some basic data processing and plotting capabilities. Behind the Rest API, there is a TimeScaleDB database, which is a time-series database. Thus, data access by time, with aggregation functions, is fast and possible.
+
+## Background
 The package is constructed in Python 3.9 and utilizes the `requests` library to directly access the Ecallisto Rest API via the link: [https://v000792.fhnw.ch/api/redoc](https://v000792.fhnw.ch/api/redoc).
+Currently, not all data is added to the database. Feel free to reach out if you need data before 2020. 
 
 ## Installation
 To install this package, clone this repository and use pip for installation. Execute the following command in your terminal:
