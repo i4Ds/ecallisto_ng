@@ -3,7 +3,15 @@ import pandas as pd
 import plotly.express as px
 
 
-def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, round_precision=1, color_scale=px.colors.sequential.Plasma):
+def plot_spectogram(
+    df,
+    instrument_name,
+    start_datetime,
+    end_datetime,
+    size=18,
+    round_precision=1,
+    color_scale=px.colors.sequential.Plasma,
+):
     # Create a new dataframe with rounded column names
     df_rounded = df.copy()
     df_rounded.columns = [f"{float(col):.{round_precision}f}" for col in df.columns]
@@ -16,7 +24,12 @@ def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, 
     sd_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
     ed_str = end_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
-    fig = px.imshow(df_rounded.T, color_continuous_scale=color_scale, zmin=df.min().min(), zmax=df.max().max())
+    fig = px.imshow(
+        df_rounded.T,
+        color_continuous_scale=color_scale,
+        zmin=df.min().min(),
+        zmax=df.max().max(),
+    )
     fig.update_layout(
         title=f"Spectogram of {instrument_name} between {sd_str} and {ed_str}",
         xaxis_title="Datetime",
@@ -27,6 +40,7 @@ def plot_spectogram(df, instrument_name, start_datetime, end_datetime, size=18, 
         yaxis_showgrid=False,
     )
     return fig
+
 
 def fill_missing_timesteps_with_nan(df):
     """

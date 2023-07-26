@@ -3,7 +3,9 @@ import pandas as pd
 from skimage import filters
 
 
-def elimwrongchannels(df, channel_std_mult=5, jump_std_mult=2, nan_interpolation_method='pchip'):
+def elimwrongchannels(
+    df, channel_std_mult=5, jump_std_mult=2, nan_interpolation_method="pchip"
+):
     """
     Remove Radio Frequency Interference (RFI) from a spectrogram represented by a pandas DataFrame.
     This function works even when there is missing data thanks to interpolation of missing values.
@@ -34,7 +36,9 @@ def elimwrongchannels(df, channel_std_mult=5, jump_std_mult=2, nan_interpolation
 
     # Fill missing data with interpolation
     df.interpolate(method=nan_interpolation_method, inplace=True)
-    df.fillna(method='bfill', inplace=True)  # for cases where NaNs are at the start of a series
+    df.fillna(
+        method="bfill", inplace=True
+    )  # for cases where NaNs are at the start of a series
 
     # Transpose df so that rows represent channels and columns represent time
     df = df.T
@@ -99,7 +103,9 @@ def subtract_constant_background(df, n=30):
     return df - df.iloc[0:n].median()
 
 
-def subtract_rolling_background(df, window=30, center=False, how="quantile", quantile_value=0.05, **kwargs):
+def subtract_rolling_background(
+    df, window=30, center=False, how="quantile", quantile_value=0.05, **kwargs
+):
     """
     Subtract a rolling background from a spectrogram represented by a pandas DataFrame.
 
@@ -132,7 +138,9 @@ def subtract_rolling_background(df, window=30, center=False, how="quantile", qua
     if how == "median":
         df_rolling = df.rolling(window=window, center=center, **kwargs).median()
     elif how == "quantile":
-        df_rolling = df.rolling(window=window, center=center, **kwargs).quantile(quantile_value)
+        df_rolling = df.rolling(window=window, center=center, **kwargs).quantile(
+            quantile_value
+        )
     else:
         raise ValueError("`how` must be 'median' or 'quantile'")
     return df - df_rolling
