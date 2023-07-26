@@ -16,7 +16,7 @@ Ecallisto NG is conveniently available on PyPI as well. To download, visit the f
 Please have a look at the jupyter notebook under `example`. 
 
 ## Usage
-Here's a guide on how to use the different features of Ecallisto NG:
+Here's a guide on how to use the different features of Ecallisto NG. Be aware that data is cached automatically in your working directory under `ecallisto_ng_cache`. Feel free to delete this folder if you want to fetch the data again.
 
 ### Data Fetching
 Fetching data is easy using the `get_data` function, housed under the `ecallisto_ng.data_fetching.get_data` module. Here's an example:
