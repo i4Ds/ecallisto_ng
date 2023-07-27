@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -5,7 +6,7 @@ import pandas as pd
 import requests
 
 BASE_URL = "https://v000792.fhnw.ch"
-
+DATA_FOLDER = "ecallisto_ng_cache"
 
 def get_data(
     instrument_name,
@@ -13,7 +14,7 @@ def get_data(
     end_datetime,
     timebucket=None,
     agg_function=None,
-    data_folder="ecallisto_ng_cache",
+    data_folder=DATA_FOLDER,
     verbose=False,
     max_retries=3,
 ):
@@ -71,7 +72,7 @@ def get_data(
     os.makedirs(data_folder, exist_ok=True)
     if os.path.exists(file_path):
         print(f"Reading data from {file_path}")
-        return pd.read_parquet(file_path)
+        return read_parquet_and_meta_data(file_path)
 
     # Send the request to the API
     response = requests.post(BASE_URL + "/api/data", json=data, timeout=180)
@@ -85,9 +86,10 @@ def get_data(
         parquet_url = response.json()["data_parquet_url"]
         json_url = response.json()["info_json_url"]
         file_id = response.json()["file_id"]
+        meta_data_url = response.json()["meta_data_url"]
 
         # Now we can start polling the URL until the parquet file is ready for download
-        n_tries = 0
+        n_tries = 1
         while True:
             try:
                 if verbose:
@@ -99,10 +101,13 @@ def get_data(
                     print("File downloaded successfully")
                     with open(file_path, "wb") as f:
                         f.write(file_response.content)
+                    # Download the meta data
+                    meta_data_response = requests.get(BASE_URL + meta_data_url)
+                    with open(file_path.replace(".parquet", ".json"), "w") as f:
+                        f.write(meta_data_response.text)
                     # Check that the file is bigger than 8 bytes (sometimes, the API returns an empty file)
                     if os.path.getsize(file_path) > 8:
-                        # Return the file as a DataFrame
-                        return pd.read_parquet(file_path)
+                        return read_parquet_and_meta_data(file_path)
                     else:
                         # Remove file and try again
                         os.remove(file_path)
@@ -153,6 +158,15 @@ def get_data(
     else:
         print(f"Error starting data retrieval: {response.status_code}")
 
+
+def read_parquet_and_meta_data(file_path):
+    meta_data_path = file_path.replace(".parquet", ".json")
+    df = pd.read_parquet(file_path)
+    with open(meta_data_path, "r") as f:
+        meta_data = json.load(f)
+    for key, value in meta_data.items():
+        df.attrs[key] = value
+    return df
 
 # Because of SQL limitation, the names of the tables do not perfectly match the instrument names.
 # This function converts the instrument name to the table name.
