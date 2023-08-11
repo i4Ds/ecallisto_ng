@@ -1,45 +1,39 @@
 import numpy as np
 import pandas as pd
-import plotly.express as px
 
 
-def plot_spectogram(
-    df,
-    instrument_name,
-    start_datetime,
-    end_datetime,
-    size=18,
-    round_precision=1,
-    color_scale=px.colors.sequential.Plasma,
-):
-    # Create a new dataframe with rounded column names
-    df_rounded = df.copy()
-    df_rounded.columns = [f"{float(col):.{round_precision}f}" for col in df.columns]
+def return_strftime_based_on_range(time_range):
+    # Decide on the date-time format based on the time range
+    if time_range < pd.Timedelta(days=1):
+        date_format = "%H:%M:%S"
+    elif time_range < pd.Timedelta(weeks=4):
+        date_format = "%Y-%m-%d %H:%M"
+    else:
+        date_format = "%Y-%m-%d"
 
-    # Make datetime prettier
-    if isinstance(start_datetime, str):
-        start_datetime = pd.to_datetime(start_datetime)
-    if isinstance(end_datetime, str):
-        end_datetime = pd.to_datetime(end_datetime)
-    sd_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
-    ed_str = end_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    return date_format
 
-    fig = px.imshow(
-        df_rounded.T,
-        color_continuous_scale=color_scale,
-        zmin=df.min().min(),
-        zmax=df.max().max(),
-    )
-    fig.update_layout(
-        title=f"Spectogram of {instrument_name} between {sd_str} and {ed_str}",
-        xaxis_title="Datetime",
-        yaxis_title="Frequency",
-        font=dict(family="Courier New, monospace", size=size, color="#7f7f7f"),
-        plot_bgcolor="black",
-        xaxis_showgrid=False,
-        yaxis_showgrid=False,
-    )
-    return fig
+
+def timedelta_to_sql_timebucket_value(timedelta):
+    # Convert to seconds
+    seconds = timedelta.total_seconds()
+
+    # Convert to SQL-compatible value
+    if seconds >= 86400:  # More than 1 day
+        days = seconds / 86400
+        sql_value = f"{int(days)} d" if days.is_integer() else f"{days:.1f} d"
+    elif seconds >= 3600:  # More than 1 hour
+        hours = seconds / 3600
+        sql_value = f"{int(hours)} h" if hours.is_integer() else f"{hours:.1f} h"
+    elif seconds >= 60:  # More than 1 minute
+        minutes = seconds / 60
+        sql_value = (
+            f"{int(minutes)} min" if minutes.is_integer() else f"{minutes:.1f} min"
+        )
+    else:
+        sql_value = f"{seconds:.1f} s"
+
+    return sql_value
 
 
 def fill_missing_timesteps_with_nan(df):

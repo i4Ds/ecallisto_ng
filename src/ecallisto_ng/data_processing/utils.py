@@ -3,6 +3,18 @@ import pandas as pd
 from skimage import filters
 
 
+def return_strftime_based_on_range(time_range):
+    # Decide on the date-time format based on the time range
+    if time_range < pd.Timedelta(days=1):
+        date_format = "%H:%M:%S"
+    elif time_range < pd.Timedelta(weeks=4):
+        date_format = "%Y-%m-%d %H:%M"
+    else:
+        date_format = "%Y-%m-%d"
+
+    return date_format
+
+
 def elimwrongchannels(
     df,
     channel_std_mult=5,

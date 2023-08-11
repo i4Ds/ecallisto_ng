@@ -5,6 +5,8 @@ import time
 import pandas as pd
 import requests
 
+from ecallisto_ng.data_fetching.get_information import check_table_data_availability
+
 BASE_URL = "https://v000792.fhnw.ch"
 DATA_FOLDER = "ecallisto_ng_cache"
 
@@ -74,6 +76,8 @@ def get_data(
     if os.path.exists(file_path):
         print(f"Reading data from {file_path}")
         return read_parquet_and_meta_data(file_path)
+
+    assert check_table_data_availability(**data), f"No data available for {data}"
 
     # Send the request to the API
     response = requests.post(BASE_URL + "/api/data", json=data, timeout=180)
