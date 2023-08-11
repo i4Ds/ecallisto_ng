@@ -8,6 +8,7 @@ import requests
 BASE_URL = "https://v000792.fhnw.ch"
 DATA_FOLDER = "ecallisto_ng_cache"
 
+
 def get_data(
     instrument_name,
     start_datetime,
@@ -167,6 +168,7 @@ def read_parquet_and_meta_data(file_path):
     for key, value in meta_data.items():
         df.attrs[key] = value
     return df
+
 
 # Because of SQL limitation, the names of the tables do not perfectly match the instrument names.
 # This function converts the instrument name to the table name.

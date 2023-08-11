@@ -4,7 +4,12 @@ from skimage import filters
 
 
 def elimwrongchannels(
-    df, channel_std_mult=5, jump_std_mult=2, nan_interpolation_method="pchip"
+    df,
+    channel_std_mult=5,
+    jump_std_mult=2,
+    nan_interpolation_method="pchip",
+    interpolate_created_nans=True,
+    verbose=False,
 ):
     """
     Remove Radio Frequency Interference (RFI) from a spectrogram represented by a pandas DataFrame.
@@ -22,6 +27,14 @@ def elimwrongchannels(
         Multiplicative factor for the standard deviation threshold used in the second RFI elimination step which deals with sharp jumps between channels.
         Channels with the absolute difference from the mean value less than this threshold times the standard deviation of differences are retained.
         Default is 2.
+    nan_interpolation_method : str, optional
+        Interpolation method to use for missing values. See pandas.DataFrame.interpolate for more details.
+        Default is "pchip".
+    interpolate_created_nans : bool, optional
+        Whether to interpolate NaNs created by the first RFI elimination step.
+        Default is True.
+    verbose : bool, optional
+        Whether to print out the number of eliminated channels.
 
     Returns
     -------
@@ -51,28 +64,43 @@ def elimwrongchannels(
     mean_sigma = std.mean()
     positions = std < channel_std_mult * mean_sigma
     eliminated_channels = (~positions).sum()
-    print(f"{eliminated_channels} channels eliminated")
+    if verbose:
+        print(f"{eliminated_channels} channels eliminated")
 
     if np.sum(positions) > 0:
-        df = df[positions]
+        # Replace the line with nans
+        df.iloc[~positions, :] = np.nan
 
-    print("Eliminating sharp jumps between channels ...")
+    if interpolate_created_nans:
+        # Interpolate the nans
+        df = df.interpolate(axis=0, limit_direction="both")
+
+    if verbose:
+        print("Eliminating sharp jumps between channels ...")
     y_profile = np.average(filters.roberts(df.values.astype(float)), axis=1)
     y_profile = pd.Series(y_profile - y_profile.mean(), index=df.index)
     mean_sigma = y_profile.std()
 
     positions = np.abs(y_profile) < jump_std_mult * mean_sigma
     eliminated_channels = (~positions).sum()
-    print(f"{eliminated_channels} channels eliminated")
+    if verbose:
+        print(f"{eliminated_channels} channels eliminated")
 
     if np.sum(positions) > 0:
-        df = df[positions]
+        # Replace the line with nans
+        df.iloc[~positions, :] = np.nan
     else:
-        print("Sorry, all channels are bad ...")
+        if verbose:
+            print("Sorry, all channels are bad ...")
         df = pd.DataFrame()
-
+    if interpolate_created_nans:
+        # Interpolate the nans
+        df = df.interpolate(axis=0, limit_direction="both")
     # Transpose df back to original orientation
     df = df.T
+
+    # Drop nans
+    df.dropna(inplace=True)
 
     # Bring back original NaN values
     df[nan_positions] = np.nan
