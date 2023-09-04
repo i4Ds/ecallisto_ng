@@ -82,6 +82,7 @@ def plot_spectogram_mpl(
         aspect="auto",
         extent=[0, df.shape[0], 0, df.shape[1]],
         cmap=current_cmap,
+        interpolation="none",
     )
 
     # Calculate the rough spacing for around 15 labels

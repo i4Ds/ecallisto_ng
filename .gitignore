@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 ecallisto_ng_cache/*
 example/ecallisto_ng_cache/*
+*fit.gz
