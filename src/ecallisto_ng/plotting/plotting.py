@@ -55,6 +55,7 @@ def plot_spectogram_mpl(
     instrument_name,
     start_datetime,
     end_datetime,
+    fig_size=(9, 6),
     cmap="plasma",
 ):
     # Create a new dataframe with rounded column names
@@ -70,7 +71,7 @@ def plot_spectogram_mpl(
     sd_str = start_datetime.strftime(strf_format)
     ed_str = end_datetime.strftime(strf_format)
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=fig_size)
 
     # Set NaN color to black
     current_cmap = plt.get_cmap(cmap).copy()
@@ -133,7 +134,7 @@ def plot_spectogram_mpl(
 
 
 def plot_with_fixed_resolution_mpl(
-    instrument, start_datetime_str, end_datetime_str, sampling_method, resolution=720
+    instrument, start_datetime_str, end_datetime_str, sampling_method, resolution=720, fig_size=(9, 6)
 ):
     """
     Plots the spectrogram for the given instrument between specified start and end datetime strings
@@ -149,7 +150,9 @@ def plot_with_fixed_resolution_mpl(
         Can be one of 'max', 'min', 'avg'.
     - resolution (int, optional): The desired resolution for plotting. Default is 720.
         Determines the time bucketing for the data aggregation.
-
+    - fig_size (tuple, optional): The desired figure size. Default is (9, 6).
+        The figure size is passed to Matplotlib's `figsize` parameter.
+    
     Returns:
     None. A spectrogram is plotted using Matplotlib.
 
@@ -189,4 +192,4 @@ def plot_with_fixed_resolution_mpl(
     df_filled = fill_missing_timesteps_with_nan(df, start_datetime, end_datetime)
 
     # Plot
-    return plot_spectogram_mpl(df_filled, instrument, start_datetime, end_datetime)
+    return plot_spectogram_mpl(df_filled, instrument, start_datetime, end_datetime, fig_size=fig_size)
