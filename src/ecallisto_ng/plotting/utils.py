@@ -89,7 +89,13 @@ def fill_missing_timesteps_with_nan(df, start_datetime=None, end_datetime=None):
     time_delta = np.median(np.diff(df.index.values))
     time_delta = pd.Timedelta(time_delta)
     start_datetime = df.index[0] if start_datetime is None else start_datetime
-    end_datetime = df.index[-1] if end_datetime is None else end_datetime
-    new_index = pd.date_range(start_datetime, end_datetime, freq=time_delta)
+    new_index = pd.date_range(df.index[0], df.index[-1], freq=time_delta)
+    # Add missing timesteps incase they are not present in the original index
+    if start_datetime:
+        while new_index.min() > start_datetime:
+            new_index = new_index.insert(0, new_index.min() - time_delta)
+    if end_datetime:
+        while new_index.max() < end_datetime:
+            new_index = new_index.insert(len(new_index), new_index.max() + time_delta)
     df = df.reindex(new_index)
     return df

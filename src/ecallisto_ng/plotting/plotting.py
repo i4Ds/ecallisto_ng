@@ -117,7 +117,7 @@ def plot_spectogram_mpl(
 
     x_ticks = np.arange(0, df.shape[0], spacing)
     ax.set_xticks(x_ticks)
-    ax.set_xticklabels(df.index[x_ticks].strftime(strf_format), rotation=30, ha="right")
+    ax.set_xticklabels(df.index[x_ticks].strftime(strf_format), rotation=90, ha="right")
     # Title
     ax.set_title(f"Spectogram of {instrument_name} between {sd_str} and {ed_str}")
     ax.set_xlabel("Time [UT]")
@@ -185,7 +185,8 @@ def plot_with_fixed_resolution_mpl(
     except NoDataAvailable as e:
         print(e)
         return None
-    df_filled = fill_missing_timesteps_with_nan(df)#, start_datetime, end_datetime)
+    
+    df_filled = fill_missing_timesteps_with_nan(df, start_datetime, end_datetime)
 
     # Plot
     return plot_spectogram_mpl(df_filled, instrument, start_datetime, end_datetime)
