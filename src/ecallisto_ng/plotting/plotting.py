@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-from ecallisto_ng.data_fetching.get_data import get_data
+from ecallisto_ng.data_fetching.get_data import NoDataAvailable, get_data
 from ecallisto_ng.plotting.utils import (
     fill_missing_timesteps_with_nan,
     return_strftime_based_on_range,
@@ -133,7 +133,7 @@ def plot_spectogram_mpl(
 
 
 def plot_with_fixed_resolution_mpl(
-    instrument, start_datetime_str, end_datetime_str, resolution=720
+    instrument, start_datetime_str, end_datetime_str, sampling_method, resolution=720
 ):
     """
     Plots the spectrogram for the given instrument between specified start and end datetime strings
@@ -145,6 +145,8 @@ def plot_with_fixed_resolution_mpl(
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
     - end_datetime_str (str or pd.Timestamp): The ending datetime for the data range.
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
+    - sampling_method (str): The sampling method to be used for the data aggregation.
+        Can be one of 'max', 'min', 'avg'.
     - resolution (int, optional): The desired resolution for plotting. Default is 720.
         Determines the time bucketing for the data aggregation.
 
@@ -175,11 +177,15 @@ def plot_with_fixed_resolution_mpl(
         "start_datetime": start_datetime_str,
         "end_datetime": end_datetime_str,
         "timebucket": timedelta_to_sql_timebucket_value(time_delta),
-        "agg_function": "MAX",
+        "agg_function": sampling_method,
     }
     # Get data
-    df = get_data(**params)
-    df_filled = fill_missing_timesteps_with_nan(df)
+    try:
+        df = get_data(**params)
+    except NoDataAvailable as e:
+        print(e)
+        return None
+    df_filled = fill_missing_timesteps_with_nan(df)#, start_datetime, end_datetime)
 
     # Plot
-    plot_spectogram_mpl(df_filled, instrument, start_datetime, end_datetime)
+    return plot_spectogram_mpl(df_filled, instrument, start_datetime, end_datetime)

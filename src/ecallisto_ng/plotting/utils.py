@@ -36,7 +36,7 @@ def timedelta_to_sql_timebucket_value(timedelta):
     return sql_value
 
 
-def fill_missing_timesteps_with_nan(df):
+def fill_missing_timesteps_with_nan(df, start_datetime=None, end_datetime=None):
     """
     Fill missing timesteps in a pandas DataFrame with NaN values. Only needed for plotting.
 
@@ -44,6 +44,14 @@ def fill_missing_timesteps_with_nan(df):
     ----------
     df : pandas.DataFrame
         The DataFrame to fill missing timesteps in.
+    start_datetime : str or pandas.Timestamp, optional
+        If you want to make sure that the returned DataFrame starts at a specific datetime,
+        you can specify it here. If not specified, the returned DataFrame will start at the
+        first datetime in the input DataFrame.
+    end_datetime : str or pandas.Timestamp, optional
+        If you want to make sure that the returned DataFrame ends at a specific datetime,   
+        you can specify it here. If not specified, the returned DataFrame will end at the
+        last datetime in the input DataFrame.
 
     Returns
     -------
@@ -76,8 +84,12 @@ def fill_missing_timesteps_with_nan(df):
     """
     # Change index to datetime, if it's not already
     df.index = pd.to_datetime(df.index)
+    # Add start and end datetimes to the index
+    # Fill missing timesteps with NaN values
     time_delta = np.median(np.diff(df.index.values))
     time_delta = pd.Timedelta(time_delta)
-    new_index = pd.date_range(df.index[0], df.index[-1], freq=time_delta)
+    start_datetime = df.index[0] if start_datetime is None else start_datetime
+    end_datetime = df.index[-1] if end_datetime is None else end_datetime
+    new_index = pd.date_range(start_datetime, end_datetime, freq=time_delta)
     df = df.reindex(new_index)
     return df

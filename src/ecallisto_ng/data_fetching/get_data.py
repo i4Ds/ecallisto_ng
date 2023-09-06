@@ -7,8 +7,16 @@ import requests
 
 from ecallisto_ng.data_fetching.get_information import check_table_data_availability
 
+# Import exceptions
+
+
+
 BASE_URL = "https://v000792.fhnw.ch"
 DATA_FOLDER = "ecallisto_ng_cache"
+
+class NoDataAvailable(Exception):
+    def __init__(self, data):
+        super().__init__(f"No data available for {data}")
 
 
 def get_data(
@@ -77,7 +85,8 @@ def get_data(
         print(f"Reading data from {file_path}")
         return read_parquet_and_meta_data(file_path)
 
-    assert check_table_data_availability(**data), f"No data available for {data}"
+    if not check_table_data_availability(**data):
+        raise NoDataAvailable(data)
 
     # Send the request to the API
     response = requests.post(BASE_URL + "/api/data", json=data, timeout=180)
