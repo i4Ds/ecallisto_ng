@@ -61,6 +61,9 @@ def plot_spectogram_mpl(
     # Create a new dataframe with rounded column names
     df = df.copy()
 
+    # Drop any rows where the datetime col is NaN
+    df = df[df.index.notnull()]
+
     # Make datetime prettier
     if isinstance(start_datetime, str):
         start_datetime = pd.to_datetime(start_datetime)
