@@ -161,3 +161,6 @@ cython_debug/
 ecallisto_ng_cache/*
 example/ecallisto_ng_cache/*
 *fit.gz
+data/*.parquet
+combination_of_signals.ipynb
+combination_of_signals_download.ipynb
