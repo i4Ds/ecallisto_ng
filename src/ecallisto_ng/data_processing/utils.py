@@ -61,9 +61,7 @@ def elimwrongchannels(
 
     # Fill missing data with interpolation
     df.interpolate(method=nan_interpolation_method, inplace=True)
-    df.fillna(
-        method="bfill", inplace=True
-    )  # for cases where NaNs are at the start of a series
+    df.bfill(inplace=True) # for cases where NaNs are at the start of a series
 
     # Transpose df so that rows represent channels and columns represent time
     df = df.T
