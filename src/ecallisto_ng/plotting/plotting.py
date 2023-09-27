@@ -39,10 +39,10 @@ def plot_spectogram(
         zmax=df.max().max(),
     )
     fig.update_layout(
-        title=f"Spectogram of {instrument_name} between {sd_str} and {ed_str}",
-        xaxis_title="Datetime",
-        yaxis_title="Frequency",
-        font=dict(family="Courier New, monospace", size=size, color="#7f7f7f"),
+        title=f"{instrument_name} Radio Flux Density | {sd_str} to {ed_str}",
+        xaxis_title="Datetime [UT]",
+        yaxis_title="Frequency [MHz]",
+        font=dict(family="Computer Modern, monospace", size=size, color="#4D4D4D"),
         plot_bgcolor="black",
         xaxis_showgrid=False,
         yaxis_showgrid=False,
@@ -126,7 +126,7 @@ def plot_spectogram_mpl(
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(df.index[x_ticks].strftime(strf_format), rotation=90, ha="right")
     # Title
-    ax.set_title(f"Spectogram of {instrument_name} between {sd_str} and {ed_str}")
+    ax.set_title=f"{instrument_name} Radio Flux Density | {sd_str} to {ed_str}",
     ax.set_xlabel("Time [UT]")
     ax.set_ylabel("Frequency [MHz]")
     ax.grid(False)
