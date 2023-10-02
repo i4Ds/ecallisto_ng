@@ -17,12 +17,11 @@ def plot_spectogram(
     start_datetime,
     end_datetime,
     size=18,
-    round_precision=1,
     color_scale=px.colors.sequential.Plasma,
 ):
     # Create a new dataframe with rounded column names
-    df_rounded = df.copy()
-    df_rounded.columns = [f"{float(col):.{round_precision}f}" for col in df.columns]
+    df = df.copy()
+    df.columns = df.columns.astype(float)
 
     # Make datetime prettier
     if isinstance(start_datetime, str):
@@ -33,7 +32,7 @@ def plot_spectogram(
     ed_str = end_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     fig = px.imshow(
-        df_rounded.T,
+        df.T,
         color_continuous_scale=color_scale,
         zmin=df.min().min(),
         zmax=df.max().max(),
@@ -44,10 +43,19 @@ def plot_spectogram(
         yaxis_title="Frequency [MHz]",
         font=dict(family="Computer Modern, monospace", size=size, color="#4D4D4D"),
         plot_bgcolor="black",
-        xaxis_showgrid=False,
+        xaxis_showgrid=True,
         yaxis_showgrid=False,
+
     )
     return fig
+
+
+from ecallisto_ng.plotting.utils import (
+    fill_missing_timesteps_with_nan,
+    return_strftime_based_on_range,
+    return_strftime_for_ticks_based_on_range,
+    timedelta_to_sql_timebucket_value,
+)
 
 
 def plot_spectogram_mpl(
@@ -74,6 +82,7 @@ def plot_spectogram_mpl(
         end_datetime = pd.to_datetime(end_datetime)
 
     strf_format = return_strftime_based_on_range(end_datetime - start_datetime)
+    strf_format_ticks = return_strftime_for_ticks_based_on_range(end_datetime - start_datetime)
     sd_str = start_datetime.strftime(strf_format)
     ed_str = end_datetime.strftime(strf_format)
 
@@ -92,31 +101,27 @@ def plot_spectogram_mpl(
         interpolation="none",
     )
 
+    def find_nearest_idx(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
     # Calculate the rough spacing for around 15 labels
     spacing = max(1, int(df.shape[1] / 15))
 
-    # Create y-ticks based on the spacing
-    all_ticks = np.arange(0, df.shape[1], spacing)
+    # Create target ticks
+    target_ticks = np.unique((df.columns.astype(float) / 10).astype(int) * 10)
 
-    # Split ticks into major and minor based on the modulo condition
-    major_ticks = [i for i in all_ticks if float(df.columns[i]) % 10 == 0]
-    minor_ticks = list(set(all_ticks) - set(major_ticks))
+    # Finding the closest indices in the DataFrame to the target_ticks
+    major_ticks = [find_nearest_idx(df.columns.astype(float), tick) for tick in target_ticks]
 
     # Set major ticks and their appearance
-    ax.set_yticks(major_ticks, minor=False)
+    ax.set_yticks(major_ticks, minor=False)  # This line was missing
     ax.tick_params(axis="y", which="major", length=10, labelsize="medium")
-    major_labels = [
-        str(int(round(float(df.columns[i])))) for i in major_ticks
-    ]  # Round to the nearest integer
-    ax.set_yticklabels(major_labels, minor=False)
 
-    # Set minor ticks and their appearance
-    ax.set_yticks(minor_ticks, minor=True)
-    ax.tick_params(axis="y", which="minor", length=5, labelsize="small")
-    minor_labels = [
-        str(round(float(df.columns[i]), 1)) for i in minor_ticks
-    ]  # Round based on round_precision
-    ax.set_yticklabels(minor_labels, minor=True)
+    # Create labels based on the position
+    major_labels = [str(int(round(float(df.columns[i]), 0))) for i in major_ticks]
+    ax.set_yticklabels(major_labels, minor=False)
 
     # Assuming df index is datetime, this will format the x-ticks
     # Compute the spacing required to get close to 30 x-labels
@@ -124,9 +129,11 @@ def plot_spectogram_mpl(
 
     x_ticks = np.arange(0, df.shape[0], spacing)
     ax.set_xticks(x_ticks)
-    ax.set_xticklabels(df.index[x_ticks].strftime(strf_format), rotation=90, ha="right")
+    # Get format
+    strf_format_ticks = return_strftime_for_ticks_based_on_range(end_datetime - start_datetime)
+    ax.set_xticklabels(df.index[x_ticks].strftime(strf_format_ticks), rotation=60, ha="center")
     # Title
-    ax.set_title=f"{instrument_name} Radio Flux Density | {sd_str} to {ed_str}",
+    ax.set_title(f"{instrument_name} Radio Flux Density | {sd_str} to {ed_str}")
     ax.set_xlabel("Time [UT]")
     ax.set_ylabel("Frequency [MHz]")
     ax.grid(False)

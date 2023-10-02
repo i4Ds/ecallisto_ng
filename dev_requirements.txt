@@ -1,5 +1,5 @@
 # dev & test dependencies
-
+nbformat
 # formatting tools
 mypy==1.2.0
 mypy-extensions==1.0.0
