@@ -76,4 +76,4 @@ plot_spectogram(df,  parameters["instrument_name"], parameters["start_datetime"]
 These simple commands allow you to easily manipulate spectogram data, enabling effective use of the Ecallisto API for your needs.
 
 ### Others
-Please have a loot at the examples under `example` for more information.
+Please have a look at the example-notebooks under `example` for more information.
