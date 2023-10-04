@@ -13,6 +13,7 @@ def return_strftime_based_on_range(time_range):
 
     return date_format
 
+
 def return_strftime_for_ticks_based_on_range(time_range):
     # Decide on the date-time format based on the time range
     if time_range < pd.Timedelta(days=1):
@@ -60,7 +61,7 @@ def fill_missing_timesteps_with_nan(df, start_datetime=None, end_datetime=None):
         you can specify it here. If not specified, the returned DataFrame will start at the
         first datetime in the input DataFrame.
     end_datetime : str or pandas.Timestamp, optional
-        If you want to make sure that the returned DataFrame ends at a specific datetime,   
+        If you want to make sure that the returned DataFrame ends at a specific datetime,
         you can specify it here. If not specified, the returned DataFrame will end at the
         last datetime in the input DataFrame.
 

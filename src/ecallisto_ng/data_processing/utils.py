@@ -1,6 +1,51 @@
 import numpy as np
 import pandas as pd
+import scipy.signal
+from scipy.ndimage import median_filter
 from skimage import filters
+
+
+def mean_filter(df, kernel_size=(5, 5)):
+    """
+    Apply mean filter to a DataFrame using a 2D convolution.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame to filter.
+    kernel_size : tuple of int, optional
+        Dimensions of the filter kernel. Default is (5, 5).
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered DataFrame.
+    """
+    kernel = np.ones(kernel_size) / (kernel_size[0] * kernel_size[1])
+    data = scipy.signal.convolve2d(df.to_numpy(), kernel, "same")
+    df.values[:] = data
+    return df
+
+
+def apply_median_filter(df, size=(3, 3)):
+    """
+    Apply median filter to a DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame to filter.
+    size : tuple of int, optional
+        Dimensions of the filter kernel. Default is (3, 3).
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered DataFrame.
+    """
+    data = median_filter(df.values, size)
+    df.values[:] = data
+    return df
 
 
 def return_strftime_based_on_range(time_range):
@@ -61,7 +106,7 @@ def elimwrongchannels(
 
     # Fill missing data with interpolation
     df.interpolate(method=nan_interpolation_method, inplace=True)
-    df.bfill(inplace=True) # for cases where NaNs are at the start of a series
+    df.bfill(inplace=True)  # for cases where NaNs are at the start of a series
 
     # Transpose df so that rows represent channels and columns represent time
     df = df.T

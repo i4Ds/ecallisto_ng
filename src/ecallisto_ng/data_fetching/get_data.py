@@ -10,9 +10,9 @@ from ecallisto_ng.data_fetching.get_information import check_table_data_availabi
 # Import exceptions
 
 
-
 BASE_URL = "https://v000792.fhnw.ch"
 DATA_FOLDER = "ecallisto_ng_cache"
+
 
 class NoDataAvailable(Exception):
     def __init__(self, data):

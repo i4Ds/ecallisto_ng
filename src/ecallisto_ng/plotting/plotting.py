@@ -16,6 +16,7 @@ def plot_spectogram(
     instrument_name,
     start_datetime,
     end_datetime,
+    title="Radio Flux Density",
     size=18,
     color_scale=px.colors.sequential.Plasma,
 ):
@@ -38,14 +39,13 @@ def plot_spectogram(
         zmax=df.max().max(),
     )
     fig.update_layout(
-        title=f"{instrument_name} Radio Flux Density | {sd_str} to {ed_str}",
+        title=f"{instrument_name} {title}",
         xaxis_title="Datetime [UT]",
         yaxis_title="Frequency [MHz]",
         font=dict(family="Computer Modern, monospace", size=size, color="#4D4D4D"),
         plot_bgcolor="black",
         xaxis_showgrid=True,
         yaxis_showgrid=False,
-
     )
     return fig
 
@@ -63,6 +63,7 @@ def plot_spectogram_mpl(
     instrument_name,
     start_datetime,
     end_datetime,
+    title="Radio Flux Density",
     fig_size=(9, 6),
     cmap="plasma",
 ):
@@ -74,7 +75,7 @@ def plot_spectogram_mpl(
 
     # Reverse the columns
     df = df.iloc[:, ::-1]
-    
+
     # Make datetime prettier
     if isinstance(start_datetime, str):
         start_datetime = pd.to_datetime(start_datetime)
@@ -82,7 +83,9 @@ def plot_spectogram_mpl(
         end_datetime = pd.to_datetime(end_datetime)
 
     strf_format = return_strftime_based_on_range(end_datetime - start_datetime)
-    strf_format_ticks = return_strftime_for_ticks_based_on_range(end_datetime - start_datetime)
+    strf_format_ticks = return_strftime_for_ticks_based_on_range(
+        end_datetime - start_datetime
+    )
     sd_str = start_datetime.strftime(strf_format)
     ed_str = end_datetime.strftime(strf_format)
 
@@ -113,7 +116,9 @@ def plot_spectogram_mpl(
     target_ticks = np.unique((df.columns.astype(float) / 10).astype(int) * 10)
 
     # Finding the closest indices in the DataFrame to the target_ticks
-    major_ticks = [find_nearest_idx(df.columns.astype(float), tick) for tick in target_ticks]
+    major_ticks = [
+        find_nearest_idx(df.columns.astype(float), tick) for tick in target_ticks
+    ]
 
     # Set major ticks and their appearance
     ax.set_yticks(major_ticks, minor=False)  # This line was missing
@@ -130,10 +135,15 @@ def plot_spectogram_mpl(
     x_ticks = np.arange(0, df.shape[0], spacing)
     ax.set_xticks(x_ticks)
     # Get format
-    strf_format_ticks = return_strftime_for_ticks_based_on_range(end_datetime - start_datetime)
-    ax.set_xticklabels(df.index[x_ticks].strftime(strf_format_ticks), rotation=60, ha="center")
+    strf_format_ticks = return_strftime_for_ticks_based_on_range(
+        end_datetime - start_datetime
+    )
+    ax.set_xticklabels(
+        df.index[x_ticks].strftime(strf_format_ticks), rotation=60, ha="center"
+    )
     # Title
-    ax.set_title(f"{instrument_name} Radio Flux Density | {sd_str} to {ed_str}")
+    title = f"{instrument_name} {title} | {sd_str} to {ed_str}"
+    ax.set_title(title, fontsize=16)
     ax.set_xlabel("Time [UT]")
     ax.set_ylabel("Frequency [MHz]")
     ax.grid(False)
@@ -147,7 +157,12 @@ def plot_spectogram_mpl(
 
 
 def plot_with_fixed_resolution_mpl(
-    instrument, start_datetime_str, end_datetime_str, sampling_method, resolution=720, fig_size=(9, 6)
+    instrument,
+    start_datetime_str,
+    end_datetime_str,
+    sampling_method,
+    resolution=720,
+    fig_size=(9, 6),
 ):
     """
     Plots the spectrogram for the given instrument between specified start and end datetime strings
@@ -165,7 +180,7 @@ def plot_with_fixed_resolution_mpl(
         Determines the time bucketing for the data aggregation.
     - fig_size (tuple, optional): The desired figure size. Default is (9, 6).
         The figure size is passed to Matplotlib's `figsize` parameter.
-    
+
     Returns:
     None. A spectrogram is plotted using Matplotlib.
 
@@ -201,8 +216,10 @@ def plot_with_fixed_resolution_mpl(
     except NoDataAvailable as e:
         print(e)
         return None
-    
+
     df_filled = fill_missing_timesteps_with_nan(df, start_datetime, end_datetime)
 
     # Plot
-    return plot_spectogram_mpl(df_filled, instrument, start_datetime, end_datetime, fig_size=fig_size)
+    return plot_spectogram_mpl(
+        df_filled, instrument, start_datetime, end_datetime, fig_size=fig_size
+    )

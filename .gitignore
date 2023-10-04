@@ -164,3 +164,4 @@ example/ecallisto_ng_cache/*
 data/*.parquet
 combination_of_signals.ipynb
 combination_of_signals_download.ipynb
+example/data_virtual_antenna/*.parquet

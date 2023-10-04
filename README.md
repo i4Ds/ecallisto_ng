@@ -8,12 +8,14 @@ Currently, not all data is added to the database. Feel free to reach out if you 
 ## Installation
 To install this package, clone this repository and use pip for installation. Execute the following command in your terminal:
 ```pip install -e .```
+### Creation of the virtual Antenna
+For this, you need to install [PyTorch](https://pytorch.org/get-started/locally/). 
 
 ## PyPI
 Ecallisto NG is conveniently available on PyPI as well. To download, visit the following link: [https://pypi.org/project/ecallisto-ng/](https://pypi.org/project/ecallisto-ng/)
 
-## Example
-Please have a look at the jupyter notebook under `example`. 
+## Examples
+Please have a look at the jupyter notebook under `example`. ¨
 
 ## Usage
 Here's a guide on how to use the different features of Ecallisto NG. Be aware that data is cached automatically in your working directory under `ecallisto_ng_cache`. Feel free to delete this folder if you want to fetch the data again.
@@ -72,3 +74,6 @@ df = subtract_rolling_background(df)
 plot_spectogram(df,  parameters["instrument_name"], parameters["start_datetime"], parameters["end_datetime"])
 ```
 These simple commands allow you to easily manipulate spectogram data, enabling effective use of the Ecallisto API for your needs.
+
+### Others
+Please have a loot at the examples under `example` for more information.
