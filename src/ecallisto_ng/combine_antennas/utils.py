@@ -1,5 +1,6 @@
 from typing import List
 
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
@@ -184,3 +185,55 @@ def shift_spectrograms(spec_list, shifts):
         shifted_spec = spec.shift(periods=int(shift_))
         shifted_spectrograms.append(shifted_spec)
     return shifted_spectrograms
+
+
+def round_frequencies_to_nearest_bin(dfs, bin_size):
+    """
+    Rounds each frequency column in multiple DataFrames to the nearest bin edge and groups them.
+    This is so that the frequencies are consistent across multiple DataFrames and we don't
+    have to deal with a huge number of columns.
+
+    Parameters
+    ----------
+    dfs : list of pandas.DataFrame
+        List of DataFrames containing the spectrograms. Columns in each DataFrame are frequencies.
+    bin_size : float
+        The size of the frequency bins.
+
+    Returns
+    -------
+    list of pandas.DataFrame
+        New list of DataFrames with binned frequencies.
+    """
+    rounded_dfs = []
+    for df in dfs:
+        rounded_df = round_col_to_nearest_bin(df.copy(), bin_size)
+        rounded_dfs.append(rounded_df)
+
+    return rounded_dfs
+
+
+def round_col_to_nearest_bin(df, bin_size):
+    """
+    Rounds each frequency column to the nearest bin edge and groups them.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame containing the spectrogram. Columns are frequencies.
+    bin_size : float
+        The size of the frequency bins.
+
+    Returns
+    -------
+    pandas.DataFrame
+        New DataFrame with binned frequencies.
+    """
+
+    # Cast column labels to float, round them, then cast back to str
+    rounded_columns = np.round(df.columns.astype(float) / bin_size) * bin_size
+    rounded_columns = np.round(rounded_columns, 1)
+    df.columns = rounded_columns.astype(str)
+
+    # Group by rounded frequencies and average the values
+    return df.T.groupby(df.columns).mean().T

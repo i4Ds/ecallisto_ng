@@ -29,8 +29,6 @@ def plot_spectogram(
         start_datetime = pd.to_datetime(start_datetime)
     if isinstance(end_datetime, str):
         end_datetime = pd.to_datetime(end_datetime)
-    sd_str = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
-    ed_str = end_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     fig = px.imshow(
         df.T,

@@ -2,9 +2,7 @@ import numpy as np
 import torch
 
 from ecallisto_ng.combine_antennas.utils import (
-    align_spectrograms_middle,
     align_to_reference,
-    find_best_reference,
     make_frequencies_match_spectograms,
     make_times_match_spectograms,
     pairwise_cross_corr,
@@ -41,6 +39,8 @@ def match_spectrograms(datas):
 def sync_spectrograms(datas, method="maximize_cross_correlation"):
     """
     Synchronize a list of spectrograms based on pairwise cross-correlation.
+    If the nans are not removed, this method does not work because it can
+    lead to pointless shifts.
 
     Parameters
     ----------
@@ -62,9 +62,19 @@ def sync_spectrograms(datas, method="maximize_cross_correlation"):
 
     datas_torch = [torch.from_numpy(df.values) for df in datas]
     if method == "maximize_cross_correlation":
+        # Check if all dataframes have no missing values.
+        # if they do, this method does not work
+        for df in datas:
+            if df.isnull().all(axis=1).any():
+                print(
+                    "Time axis of a df is all nan. This method does not work with nan values."
+                )
+                return datas, np.nan
         cross_corr_matrix = pairwise_cross_corr(datas_torch)
     else:
-        raise ValueError("Unsupported method. Only 'maximize_cross_correlation' supported")
+        raise ValueError(
+            "Unsupported method. Only 'maximize_cross_correlation' supported"
+        )
 
     # Find the best reference and align all to it
     ref_idx, shifts_to_ref = align_to_reference(cross_corr_matrix)
