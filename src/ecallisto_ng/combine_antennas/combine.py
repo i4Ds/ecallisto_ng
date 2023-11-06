@@ -84,7 +84,7 @@ def sync_spectrograms(datas, method="maximize_cross_correlation"):
 
 
 def preprocess_data(
-    datas, min_n_frequencies=30, freq_range=[20, 80], max_freq=150, filter_type=None
+    datas, min_n_frequencies=30, freq_range=[20, 80], filter_type=None, resample_func='MAX'
 ):
     """
     Process a list of DataFrames based on a series of filtering and transformation steps.
@@ -97,10 +97,10 @@ def preprocess_data(
         Minimum number of frequencies required for processing. Default is 100.
     freq_range : list of float, optional
         Frequency range to keep. Default is [20, 80].
-    max_freq : float, optional.
-        Maximum frequency an instrument should measure. Default is 150.
     filter_type : str, optional
         Type of filter to apply ('median' or 'mean'). Default is None.
+    resample_func : str, optional
+        Resampling function to use. Default is 'MAX'.
 
     Returns
     -------
@@ -110,15 +110,25 @@ def preprocess_data(
     data_processed = []
     for data in datas:
         try:
-            if max([float(col) for col in data.columns]) > max_freq:
-                continue
-
             # Cut away columns based on frequency limits
             columns = np.array([float(col) for col in data.columns])
             data = data.loc[:, (columns > freq_range[0]) & (columns < freq_range[1])]
 
+            # Resample data 
+            if resample_func == 'MAX':
+                data = data.resample("250ms").max()
+            elif resample_func == 'MIN':
+                data = data.resample("250ms").min()
+            elif resample_func == 'MEAN':
+                data = data.resample("250ms").mean()
+            else:
+                raise ValueError("Unsupported resampling function")
+
             # Check column conditions
             if len(data.columns) < min_n_frequencies:
+                print(
+                    f"Skipping {data.attrs['FULLINSTRUME']} it has only {len(data.columns)} / {min_n_frequencies} frequencies"
+                )
                 continue
 
             # Data transformations

@@ -7,15 +7,16 @@ from ecallisto_ng.data_fetching.get_data import NoDataAvailable, get_data
 from ecallisto_ng.plotting.utils import (
     fill_missing_timesteps_with_nan,
     return_strftime_based_on_range,
+    return_strftime_for_ticks_based_on_range,
     timedelta_to_sql_timebucket_value,
 )
 
 
 def plot_spectogram(
     df,
-    instrument_name,
-    start_datetime,
-    end_datetime,
+    instrument_name=None, 
+    start_datetime=None,
+    end_datetime=None,
     title="Radio Flux Density",
     size=18,
     color_scale=px.colors.sequential.Plasma,
@@ -23,6 +24,16 @@ def plot_spectogram(
     # Create a new dataframe with rounded column names
     df = df.copy()
     df.columns = df.columns.astype(float)
+
+    # If instrument name is not provided, try to get it from the dataframe
+    if instrument_name is None:
+        instrument_name = df.attrs.get("FULLINSTRUME", "Unknown")
+
+    # If start_datetime is not provided, try to get it from the dataframe
+    if start_datetime is None:
+        start_datetime = df.index.min()
+    if end_datetime is None:
+        end_datetime = df.index.max()
 
     # Make datetime prettier
     if isinstance(start_datetime, str):
@@ -48,19 +59,13 @@ def plot_spectogram(
     return fig
 
 
-from ecallisto_ng.plotting.utils import (
-    fill_missing_timesteps_with_nan,
-    return_strftime_based_on_range,
-    return_strftime_for_ticks_based_on_range,
-    timedelta_to_sql_timebucket_value,
-)
 
 
 def plot_spectogram_mpl(
     df,
-    instrument_name,
-    start_datetime,
-    end_datetime,
+    instrument_name=None,
+    start_datetime=None,
+    end_datetime=None,
     title="Radio Flux Density",
     fig_size=(9, 6),
     cmap="plasma",
@@ -73,6 +78,16 @@ def plot_spectogram_mpl(
 
     # Reverse the columns
     df = df.iloc[:, ::-1]
+
+    # If instrument name is not provided, try to get it from the dataframe
+    if instrument_name is None:
+        instrument_name = df.attrs.get("FULLINSTRUME", "Unknown")
+
+    # If start_datetime is not provided, try to get it from the dataframe
+    if start_datetime is None:
+        start_datetime = df.index.min()
+    if end_datetime is None:
+        end_datetime = df.index.max()
 
     # Make datetime prettier
     if isinstance(start_datetime, str):
