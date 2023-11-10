@@ -92,11 +92,14 @@ def align_spectrograms_middle(spec1, spec2):
     """
     summed_spec1 = torch.nansum(spec1, dim=1)
     summed_spec2 = torch.nansum(spec2, dim=1)
-    middle_section = summed_spec2[int(0.25 * len(summed_spec2)):int(0.75 * len(summed_spec2))]
-
+    middle_section = summed_spec2[
+        int(0.25 * len(summed_spec2)) : int(0.75 * len(summed_spec2))
+    ]
 
     # Perform 1D convolution (cross-correlation)
-    cross_corr = F.conv1d(summed_spec1[None, None, :], middle_section[None, None, :])#.flip(dims=[2])) # Flip no yes??
+    cross_corr = F.conv1d(
+        summed_spec1[None, None, :], middle_section[None, None, :]
+    )  # .flip(dims=[2])) # Flip no yes??
 
     # Calculate the shift
     shift = torch.argmax(cross_corr)

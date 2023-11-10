@@ -2,18 +2,11 @@ import numpy as np
 import torch
 
 from ecallisto_ng.combine_antennas.utils import (
-    align_to_reference,
-    make_frequencies_match_spectograms,
-    make_times_match_spectograms,
-    pairwise_cross_corr,
-    shift_spectrograms,
-)
-from ecallisto_ng.data_processing.utils import (
-    apply_median_filter,
-    elimwrongchannels,
-    mean_filter,
-    subtract_constant_background,
-)
+    align_to_reference, make_frequencies_match_spectograms,
+    make_times_match_spectograms, pairwise_cross_corr, shift_spectrograms)
+from ecallisto_ng.data_processing.utils import (apply_median_filter,
+                                                elimwrongchannels, mean_filter,
+                                                subtract_constant_background)
 from ecallisto_ng.plotting.plotting import fill_missing_timesteps_with_nan
 
 
@@ -84,7 +77,11 @@ def sync_spectrograms(datas, method="maximize_cross_correlation"):
 
 
 def preprocess_data(
-    datas, min_n_frequencies=30, freq_range=[20, 80], filter_type=None, resample_func='MAX'
+    datas,
+    min_n_frequencies=30,
+    freq_range=[20, 80],
+    filter_type=None,
+    resample_func="MAX",
 ):
     """
     Process a list of DataFrames based on a series of filtering and transformation steps.
@@ -114,12 +111,12 @@ def preprocess_data(
             columns = np.array([float(col) for col in data.columns])
             data = data.loc[:, (columns > freq_range[0]) & (columns < freq_range[1])]
 
-            # Resample data 
-            if resample_func == 'MAX':
+            # Resample data
+            if resample_func == "MAX":
                 data = data.resample("250ms").max()
-            elif resample_func == 'MIN':
+            elif resample_func == "MIN":
                 data = data.resample("250ms").min()
-            elif resample_func == 'MEAN':
+            elif resample_func == "MEAN":
                 data = data.resample("250ms").mean()
             else:
                 raise ValueError("Unsupported resampling function")
@@ -127,7 +124,7 @@ def preprocess_data(
             # Check column conditions
             if len(data.columns) < min_n_frequencies:
                 print(
-                    f"Skipping {data.attrs['FULLINSTRUME']} it has only {len(data.columns)} / {min_n_frequencies} frequencies"
+                    f"Skipping {data.attrs['FULLNAME']} it has only {len(data.columns)} / {min_n_frequencies} frequencies"
                 )
                 continue
 

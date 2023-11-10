@@ -5,16 +5,14 @@ import plotly.express as px
 
 from ecallisto_ng.data_fetching.get_data import NoDataAvailable, get_data
 from ecallisto_ng.plotting.utils import (
-    fill_missing_timesteps_with_nan,
-    return_strftime_based_on_range,
+    fill_missing_timesteps_with_nan, return_strftime_based_on_range,
     return_strftime_for_ticks_based_on_range,
-    timedelta_to_sql_timebucket_value,
-)
+    timedelta_to_sql_timebucket_value)
 
 
 def plot_spectogram(
     df,
-    instrument_name=None, 
+    instrument_name=None,
     start_datetime=None,
     end_datetime=None,
     title="Radio Flux Density",
@@ -27,7 +25,7 @@ def plot_spectogram(
 
     # If instrument name is not provided, try to get it from the dataframe
     if instrument_name is None:
-        instrument_name = df.attrs.get("FULLINSTRUME", "Unknown")
+        instrument_name = df.attrs.get("FULLNAME", "Unknown")
 
     # If start_datetime is not provided, try to get it from the dataframe
     if start_datetime is None:
@@ -59,8 +57,6 @@ def plot_spectogram(
     return fig
 
 
-
-
 def plot_spectogram_mpl(
     df,
     instrument_name=None,
@@ -81,7 +77,7 @@ def plot_spectogram_mpl(
 
     # If instrument name is not provided, try to get it from the dataframe
     if instrument_name is None:
-        instrument_name = df.attrs.get("FULLINSTRUME", "Unknown")
+        instrument_name = df.attrs.get("FULLNAME", "Unknown")
 
     # If start_datetime is not provided, try to get it from the dataframe
     if start_datetime is None:
