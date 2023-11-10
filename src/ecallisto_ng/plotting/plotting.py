@@ -3,11 +3,13 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-from ecallisto_ng.data_fetching.get_data import NoDataAvailable, get_data
+from ecallisto_ng.data_download.downloader import get_ecallisto_data
+from ecallisto_ng.data_fetching.get_data import NoDataAvailable
 from ecallisto_ng.plotting.utils import (
-    fill_missing_timesteps_with_nan, return_strftime_based_on_range,
+    calculate_resample_freq,
+    return_strftime_based_on_range,
     return_strftime_for_ticks_based_on_range,
-    timedelta_to_sql_timebucket_value)
+)
 
 
 def plot_spectogram(
@@ -16,6 +18,7 @@ def plot_spectogram(
     start_datetime=None,
     end_datetime=None,
     title="Radio Flux Density",
+    resolution=720,
     size=18,
     color_scale=px.colors.sequential.Plasma,
 ):
@@ -38,6 +41,14 @@ def plot_spectogram(
         start_datetime = pd.to_datetime(start_datetime)
     if isinstance(end_datetime, str):
         end_datetime = pd.to_datetime(end_datetime)
+
+    # If resolution is provided, resample the dataframe
+    if resolution is not None:
+        resample_freq = calculate_resample_freq(
+            start_datetime, end_datetime, resolution
+        )
+
+        df = df.resample(resample_freq).max()
 
     fig = px.imshow(
         df.T,
@@ -169,7 +180,6 @@ def plot_with_fixed_resolution_mpl(
     instrument,
     start_datetime_str,
     end_datetime_str,
-    sampling_method,
     resolution=720,
     fig_size=(9, 6),
 ):
@@ -183,8 +193,6 @@ def plot_with_fixed_resolution_mpl(
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
     - end_datetime_str (str or pd.Timestamp): The ending datetime for the data range.
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
-    - sampling_method (str): The sampling method to be used for the data aggregation.
-        Can be one of 'max', 'min', 'avg'.
     - resolution (int, optional): The desired resolution for plotting. Default is 720.
         Determines the time bucketing for the data aggregation.
     - fig_size (tuple, optional): The desired figure size. Default is (9, 6).
@@ -192,43 +200,23 @@ def plot_with_fixed_resolution_mpl(
 
     Returns:
     None. A spectrogram is plotted using Matplotlib.
-
-    Usage:
-    plot_with_fixed_resolution_mpl('some_instrument', '2022-03-31 18:46:00', '2022-04-01 18:46:00', resolution=500)
-
-    Note:
-    The function internally calls other utility functions including:
-    - timedelta_to_sql_timebucket_value() to convert the time delta to an appropriate format for SQL queries.
-    - get_data() to fetch the data based on the provided parameters.
-    - fill_missing_timesteps_with_nan() to handle any missing data points.
-    - plot_spectogram_mpl() to generate the actual spectrogram plot.
     """
+    start_datetime = pd.to_datetime(start_datetime_str)
+    end_datetime = pd.to_datetime(end_datetime_str)
 
-    # Make datetime prettier
-    if isinstance(start_datetime_str, str):
-        start_datetime = pd.to_datetime(start_datetime_str)
-    if isinstance(end_datetime_str, str):
-        end_datetime = pd.to_datetime(end_datetime_str)
-
-    time_delta = (end_datetime - start_datetime) / resolution
-    # Create parameter dictionary
-    params = {
-        "instrument_name": instrument,
-        "start_datetime": start_datetime_str,
-        "end_datetime": end_datetime_str,
-        "timebucket": timedelta_to_sql_timebucket_value(time_delta),
-        "agg_function": sampling_method,
-    }
-    # Get data
-    try:
-        df = get_data(**params)
-    except NoDataAvailable as e:
-        print(e)
+    # Fetch data
+    df = get_ecallisto_data(start_datetime, end_datetime, instrument)
+    if len(df) == 0:
+        print(NoDataAvailable)
         return None
 
-    df_filled = fill_missing_timesteps_with_nan(df, start_datetime, end_datetime)
+    # Calculate resampling frequency
+    resample_freq = calculate_resample_freq(start_datetime, end_datetime, resolution)
+
+    # Resample data
+    df = df.resample(resample_freq).max()
 
     # Plot
     return plot_spectogram_mpl(
-        df_filled, instrument, start_datetime, end_datetime, fig_size=fig_size
+        df, instrument, start_datetime, end_datetime, fig_size=fig_size
     )

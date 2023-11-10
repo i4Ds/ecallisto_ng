@@ -26,6 +26,11 @@ def return_strftime_for_ticks_based_on_range(time_range):
     return date_format
 
 
+def calculate_resample_freq(start_datetime, end_datetime, resolution):
+    tota_time_delta = end_datetime - start_datetime
+    return tota_time_delta / (resolution - 1)
+
+
 def timedelta_to_sql_timebucket_value(timedelta):
     # Convert to seconds
     seconds = timedelta.total_seconds()
