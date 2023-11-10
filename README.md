@@ -102,7 +102,13 @@ from ecallisto_ng.plotting.utils import plot_spectogram
 
 plot_spectogram(df)
 ```
+Make use of .resample to reduce the size of the data. Here's an example:
+```python
+df = df.resample("1min").mean()
+plot_spectogram(df)
+```
 
+For more documentation on resample, please refer to the [Pandas documentation](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html).
 ## Spectogram editing
 We also provide some basic functionalities to edit the spectogram. Here's how you can do it:
 ```python
