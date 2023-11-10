@@ -2,55 +2,9 @@ import numpy as np
 import pandas as pd
 
 
-def return_strftime_based_on_range(time_range):
-    # Decide on the date-time format based on the time range
-    if time_range > pd.Timedelta(weeks=1):
-        date_format = "%Y-%m-%d"
-    elif time_range > pd.Timedelta(days=1):
-        date_format = "%Y-%m-%d %H:%M"
-    else:
-        date_format = "%Y-%m-%d %H:%M:%S"
-
-    return date_format
-
-
-def return_strftime_for_ticks_based_on_range(time_range):
-    # Decide on the date-time format based on the time range
-    if time_range < pd.Timedelta(days=1):
-        date_format = "%H:%M:%S"
-    elif time_range < pd.Timedelta(days=30):
-        date_format = "%m-%d %H:%M"
-    else:
-        date_format = "%m-%d %H:%M:%S"
-
-    return date_format
-
-
 def calculate_resample_freq(start_datetime, end_datetime, resolution):
     tota_time_delta = end_datetime - start_datetime
     return tota_time_delta / (resolution - 1)
-
-
-def timedelta_to_sql_timebucket_value(timedelta):
-    # Convert to seconds
-    seconds = timedelta.total_seconds()
-
-    # Convert to SQL-compatible value
-    if seconds >= 86400:  # More than 1 day
-        days = seconds / 86400
-        sql_value = f"{int(days)} d" if days.is_integer() else f"{days:.1f} d"
-    elif seconds >= 3600:  # More than 1 hour
-        hours = seconds / 3600
-        sql_value = f"{int(hours)} h" if hours.is_integer() else f"{hours:.1f} h"
-    elif seconds >= 60:  # More than 1 minute
-        minutes = seconds / 60
-        sql_value = (
-            f"{int(minutes)} min" if minutes.is_integer() else f"{minutes:.1f} min"
-        )
-    else:
-        sql_value = f"{seconds:.1f} s"
-
-    return sql_value
 
 
 def fill_missing_timesteps_with_nan(df, start_datetime=None, end_datetime=None):
