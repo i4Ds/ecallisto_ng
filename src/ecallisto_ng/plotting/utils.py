@@ -7,6 +7,30 @@ def calculate_resample_freq(start_datetime, end_datetime, resolution):
     return tota_time_delta / (resolution - 1)
 
 
+def return_strftime_based_on_range(time_range):
+    # Decide on the date-time format based on the time range
+    if time_range > pd.Timedelta(weeks=1):
+        date_format = "%Y-%m-%d"
+    elif time_range > pd.Timedelta(days=1):
+        date_format = "%Y-%m-%d %H:%M"
+    else:
+        date_format = "%Y-%m-%d %H:%M:%S"
+
+    return date_format
+
+
+def return_strftime_for_ticks_based_on_range(time_range):
+    # Decide on the date-time format based on the time range
+    if time_range < pd.Timedelta(days=1):
+        date_format = "%H:%M:%S"
+    elif time_range < pd.Timedelta(days=30):
+        date_format = "%m-%d %H:%M"
+    else:
+        date_format = "%m-%d %H:%M:%S"
+
+    return date_format
+
+
 def fill_missing_timesteps_with_nan(df, start_datetime=None, end_datetime=None):
     """
     Fill missing timesteps in a pandas DataFrame with NaN values. Only needed for plotting.

@@ -2,12 +2,19 @@ import numpy as np
 import torch
 
 from ecallisto_ng.combine_antennas.utils import (
-    align_to_reference, make_frequencies_match_spectograms,
-    make_times_match_spectograms, pairwise_cross_corr, shift_spectrograms)
-from ecallisto_ng.data_processing.utils import (apply_median_filter,
-                                                elimwrongchannels, mean_filter,
-                                                subtract_constant_background)
-from ecallisto_ng.plotting.plotting import fill_missing_timesteps_with_nan
+    align_to_reference,
+    make_frequencies_match_spectograms,
+    make_times_match_spectograms,
+    pairwise_cross_corr,
+    shift_spectrograms,
+)
+from ecallisto_ng.data_processing.utils import (
+    apply_median_filter,
+    elimwrongchannels,
+    mean_filter,
+    subtract_constant_background,
+)
+from ecallisto_ng.plotting.utils import fill_missing_timesteps_with_nan
 
 
 def match_spectrograms(datas):
@@ -81,6 +88,7 @@ def preprocess_data(
     min_n_frequencies=30,
     freq_range=[20, 80],
     filter_type=None,
+    subtract_background=False,
     resample_func="MAX",
 ):
     """
@@ -131,7 +139,8 @@ def preprocess_data(
             # Data transformations
             data = fill_missing_timesteps_with_nan(data)
             data = elimwrongchannels(data)
-            data = subtract_constant_background(data, 100)
+            if subtract_background:
+                data = subtract_constant_background(data, 100)
 
             # Apply filter if specified
             if filter_type == "median":

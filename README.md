@@ -18,7 +18,7 @@ Ecallisto NG is a comprehensive Python package tailored for interacting with Eca
   - [Contributing](#contributing)
 
 ## Background
-he package is built with Python 3.9 and primarily uses the Pandas library for data manipulation. While it initially offered a direct interaction with the Ecallisto Rest API (now deprecated), its current functionality is centered around efficient data processing and visualization.
+he package is built with Python 3.9 and primarily uses the Pandas library for data manipulation. While it initially offered a direct interaction with the Ecallisto Rest API (now deprecated), its current functionality is centered around efficient data processing and visualization. The data provided by e-Callisto is stored in a pandas Dataframe, where the index is the time and the column names are the observed frequencies.
 
 ### Note: The REST API is now deprecated. However, you can still access it via https://v000792.fhnw.ch/api/redoc for a while. This was done because with help of pandas and multiprocessing, the download of the data is much faster and more efficient when directly accessing the files.
 

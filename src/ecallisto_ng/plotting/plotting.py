@@ -47,6 +47,7 @@ def plot_spectogram(
         resample_freq = calculate_resample_freq(
             start_datetime, end_datetime, resolution
         )
+        resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
 
         df = df.resample(resample_freq).max()
 
