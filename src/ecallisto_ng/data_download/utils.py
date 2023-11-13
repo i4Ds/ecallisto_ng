@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-def filter_dataframes(dfs, start_date, end_date, freq_start=None, freq_end=None):
+def filter_dataframes(dfs, start_date, end_date, verbose=False, freq_start=None, freq_end=None):
     """
     Filter the dataframes in a dictionary by a date range.
 
@@ -18,15 +18,25 @@ def filter_dataframes(dfs, start_date, end_date, freq_start=None, freq_end=None)
         The start date for the filter.
     end_date : datetime-like
         The end date for the filter.
+    verbose : bool
+        Whether to print progress information.
+    freq_start : float or None
+        The start frequency for the filter.
+    freq_end : float or None
+        The end frequency for the filter.
 
     Returns
     -------
     dict of str: `~pandas.DataFrame`
         Dictionary of instrument names and their corresponding dataframes.
     """
+    if verbose:
+        print("Filtering dataframes.")
     for instrument, df in dfs.items():
         dfs[instrument] = df.loc[start_date:end_date]
 
+    if verbose:
+        print("Filtering frequencies.")
     if freq_start:
         for instrument, df in dfs.items():
             dfs[instrument] = df.loc[:, freq_start:freq_end]
@@ -43,6 +53,8 @@ def filter_dataframes(dfs, start_date, end_date, freq_start=None, freq_end=None)
         del dfs[instrument]
 
     # Update the header
+    if verbose:
+        print("Updating headers after filtering.")
     for instrument, df in dfs.items():
         df = readd_edit_header(df, dfs[instrument].attrs)
     return dfs
@@ -244,16 +256,20 @@ def readd_edit_header(df, dict_):
     return df
 
 
-def concat_dfs_by_instrument(dfs):
+def concat_dfs_by_instrument(dfs, verbose=False):
     instruments = {}
     # Extract attrs from each df
     headers = [df.attrs for df in dfs]
+    if verbose:
+        print("Combining headers.")
     for df in dfs:
         instrument = df.attrs["INSTRUME"] + "_" + df.attrs["ANTENNAID"]
         if instrument not in instruments:
             instruments[instrument] = []
         instruments[instrument].append(df)
 
+    if verbose:
+        print("Concatenating dataframes.")
     for instrument, dfs in instruments.items():
         headers = [df.attrs for df in dfs]
         identical_headers = extract_identical_dicts(headers)

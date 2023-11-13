@@ -18,7 +18,7 @@ def plot_spectogram(
     start_datetime=None,
     end_datetime=None,
     title="Radio Flux Density",
-    resolution=720,
+    resolution=1440,
     size=18,
     color_scale=px.colors.sequential.Plasma,
 ):

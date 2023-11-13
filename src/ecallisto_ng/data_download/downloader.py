@@ -1,12 +1,15 @@
 import fnmatch
 import os
+import traceback
 from concurrent.futures import ProcessPoolExecutor
 from datetime import timedelta
+from functools import partial
 
 import pandas as pd
 import requests
 from astropy.io import fits
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 from ecallisto_ng.data_download.utils import (
     concat_dfs_by_instrument,
@@ -17,16 +20,18 @@ from ecallisto_ng.data_download.utils import (
     instrument_name_to_globbing_pattern,
 )
 
-BASE_URL = "http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto/"
+BASE_URL = "http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto"
+LOCAL_URL = "/mnt/nas05/data01/radio/2002-20yy_Callisto/"
 
 
 def get_ecallisto_data(
     start_datetime,
     end_datetime,
     instrument_name=None,
+    verbose=False,
     freq_start=None,
     freq_end=None,
-    base_url=BASE_URL,
+    download_from_local=False,
 ):
     """
     Get the e-Callisto data within a date range and optional instrument regex pattern.
@@ -42,13 +47,15 @@ def get_ecallisto_data(
     instrument_string : str or None
         The instrument name you want to match in file URLs. If None, all files are considered.
         Substrings also work, such as 'ALASKA'.
+    verbose : bool
+        Whether to print progress information.
     freq_start : float or None
         The start frequency for the filter.
     freq_end : float or None
         The end frequency for the filter.
-
-    base_url : str
-        The base URL of the remote file directory.
+    download_from_local : bool
+        Whether to download the files from the local directory instead of the remote directory.
+        Useful if you are working with a local copy of the data.
 
     Returns
     -------
@@ -57,26 +64,24 @@ def get_ecallisto_data(
         is found, it returns a single dataframe.
     """
     file_urls = get_remote_files_url(
-        start_datetime, end_datetime, instrument_name, base_url
+        start_datetime, end_datetime, instrument_name
     )
     if not file_urls:
         print(
             f"No files found for {instrument_name} between {start_datetime} and {end_datetime}."
         )
         return {}
-    try:
-        dfs = download_fits_process_to_pandas(file_urls)
-        dfs = concat_dfs_by_instrument(dfs)
-        dfs = filter_dataframes(
-            dfs, start_datetime, end_datetime, freq_start=freq_start, freq_end=freq_end
-        )
-        if len(dfs) == 1:
-            return dfs[list(dfs.keys())[0]]
-        else:
-            return dfs
-    except Exception as e:
-        print(f"Error with {instrument_name}: {e}")
-        return {}
+    if download_from_local:
+        file_urls = [file_url.replace(BASE_URL, LOCAL_URL) for file_url in file_urls]
+    dfs = download_fits_process_to_pandas(file_urls, verbose)
+    dfs = concat_dfs_by_instrument(dfs, verbose)
+    dfs = filter_dataframes(
+        dfs, start_datetime, end_datetime, verbose, freq_start=freq_start, freq_end=freq_end
+    )
+    if len(dfs) == 1:
+        return dfs[list(dfs.keys())[0]]
+    else:
+        return dfs
 
 
 def get_ecallisto_data_generator(
@@ -126,6 +131,10 @@ def get_ecallisto_data_generator(
     """
     if isinstance(instrument_name, str):
         instrument_name = [instrument_name]
+    if instrument_name is None:
+        # Get all instrument names with available data. This makes the generator more efficient
+        # because it doesn't have to check for each instrument name individually.
+        instrument_name = get_instrument_with_available_data(start_datetime, end_datetime) 
 
     for instrument_name_ in instrument_name:
         file_urls = get_remote_files_url(
@@ -155,9 +164,9 @@ def get_ecallisto_data_generator(
 
 
 def get_instrument_with_available_data(
-    start_date, end_date, instrument_name=None, base_url=BASE_URL
+    start_date, end_date, instrument_name=None
 ):
-    file_urls = get_remote_files_url(start_date, end_date, instrument_name, base_url)
+    file_urls = get_remote_files_url(start_date, end_date, instrument_name)
     if not file_urls:
         print(
             f"No files found for {instrument_name} between {start_date} and {end_date}."
@@ -167,20 +176,37 @@ def get_instrument_with_available_data(
     return sorted(list(set(instrument_names)))
 
 
-def download_fits_process_to_pandas(file_urls):
+def download_fits_process_to_pandas(file_urls, verbose=False):
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-        # Map each URL to a fetch function with a session
-        results = executor.map(fetch_fits_to_pandas, file_urls)
-    # Flatten the results and return them
-    return [x for x in results]
+        # Use tqdm for progress tracking, passing the total number of tasks
+        partial_f = partial(fetch_fits_to_pandas, verbose=verbose)
+        results = list(
+            tqdm(
+                executor.map(partial_f, file_urls),
+                total=len(file_urls),
+                desc="Downloading and processing files",
+            )
+        )
+    # Check if any of the results are None
+    if verbose and any(result is None for result in results):
+        print("Some files could not be downloaded (See traceback above).")
+    # Remove None values
+    results = [result for result in results if result is not None]
+    return results
 
 
-def fetch_fits_to_pandas(file_url):
-    fits_file = fits.open(file_url, cache=False)
-    df = ecallisto_fits_to_pandas(fits_file)
-    # Add the instrument name to it
-    df.attrs["ANTENNAID"] = extract_instrument_name(file_url)[-2:]
-    return df
+def fetch_fits_to_pandas(file_url, verbose=False):
+    try:
+        fits_file = fits.open(file_url, cache=False)
+        df = ecallisto_fits_to_pandas(fits_file)
+        # Add the instrument name to it
+        df.attrs["ANTENNAID"] = extract_instrument_name(file_url)[-2:]
+        return df
+    except Exception as e:
+        if verbose:
+            print(f"Error for {file_url}: {e}")
+            traceback.print_exc()
+        return None
 
 
 def fetch_date_files(date_url, session):
@@ -217,7 +243,7 @@ def get_remote_files_url(
     start_date,
     end_date,
     instrument_name=None,
-    base_url="http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto/",
+    base_url="http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto",
 ):
     """
     Get the remote file URLs within a date range and optional instrument regex pattern.
