@@ -19,7 +19,8 @@ def plot_spectogram(
     end_datetime=None,
     title="Radio Flux Density",
     resolution=1440,
-    size=18,
+    font_size=18,
+    fig_size=(600, 1000),
     color_scale=px.colors.sequential.Plasma,
 ):
     # Create a new dataframe with rounded column names
@@ -56,12 +57,14 @@ def plot_spectogram(
         color_continuous_scale=color_scale,
         zmin=df.min().min(),
         zmax=df.max().max(),
+        height=fig_size[0],
+        width=fig_size[1],
     )
     fig.update_layout(
         title=f"{instrument_name} {title}",
         xaxis_title="Datetime [UT]",
         yaxis_title="Frequency [MHz]",
-        font=dict(family="Computer Modern, monospace", size=size, color="#4D4D4D"),
+        font=dict(family="Computer Modern, monospace", size=font_size, color="#4D4D4D"),
         plot_bgcolor="black",
         xaxis_showgrid=True,
         yaxis_showgrid=False,

@@ -74,45 +74,35 @@ def make_frequencies_match_spectograms(dfs: List[pd.DataFrame]) -> List[pd.DataF
     return new_dfs
 
 
-def align_spectrograms_middle(spec1, spec2):
+def get_max_cross_corr_shift(spec1, spec2):
     """
-    Aligns two spectrograms by finding the shift for max cross-correlation over the middle 50%.
+    Get the shift amount that maximizes the cross-correlation between two spectrograms.
 
     Parameters
     ----------
-    spec1 : torch.Tensor
+    spec1 : np.array
         First spectrogram.
-    spec2 : torch.Tensor
+    spec2 : np.array
         Second spectrogram.
 
     Returns
     -------
     int
-        Shift amount.
+        Shift amount for the second spectrogram that maximizes the cross-correlation.
     """
-    summed_spec1 = torch.nansum(spec1, dim=1)
-    summed_spec2 = torch.nansum(spec2, dim=1)
-    middle_section = summed_spec2[
-        int(0.25 * len(summed_spec2)) : int(0.75 * len(summed_spec2))
-    ]
-
-    # Perform 1D convolution (cross-correlation)
-    cross_corr = F.conv1d(
-        summed_spec1[None, None, :], middle_section[None, None, :]
-    )  # .flip(dims=[2])) # Flip no yes??
-
-    # Calculate the shift
-    shift = torch.argmax(cross_corr)
-    return shift.item() - len(middle_section) // 2
+    cross_corr = np.correlate(
+        spec1.sum(axis=1).values, spec2.sum(axis=1).values, mode="full"
+    )
+    return cross_corr.argmax() - (len(spec1) - 1)
 
 
-def pairwise_cross_corr(spec_list):
+def get_cross_corr_matrix(specs: List[pd.DataFrame]) -> np.ndarray:
     """
-    Compute pairwise cross-correlation between a list of spectrograms.
+    Get the cross-correlation matrix between a list of spectrograms.
 
     Parameters
     ----------
-    spec_list : list of torch.Tensor
+    specs : List[pd.DataFrame]
         List of spectrograms.
 
     Returns
@@ -120,13 +110,13 @@ def pairwise_cross_corr(spec_list):
     torch.Tensor
         Cross-correlation matrix.
     """
-    N = len(spec_list)
-    cross_corr_matrix = torch.zeros(N, N)
-    for i in range(N):
-        for j in range(i + 1, N):
-            shift = align_spectrograms_middle(spec_list[i], spec_list[j])
-            cross_corr_matrix[i][j] = shift
-            cross_corr_matrix[j][i] = -shift
+    n_specs = len(specs)
+    cross_corr_matrix = np.zeros((n_specs, n_specs))
+    for i in range(n_specs):
+        for j in range(i + 1, n_specs):
+            shift = get_max_cross_corr_shift(specs[i], specs[j])
+            cross_corr_matrix[i, j] = shift
+            cross_corr_matrix[j, i] = -shift
     return cross_corr_matrix
 
 
@@ -136,7 +126,7 @@ def find_best_reference(cross_corr_matrix):
 
     Parameters
     ----------
-    cross_corr_matrix : torch.Tensor
+    cross_corr_matrix : np.ndarray
         Cross-correlation matrix.
 
     Returns
@@ -144,9 +134,8 @@ def find_best_reference(cross_corr_matrix):
     int
         Index of the best reference spectrogram.
     """
-    abs_sum_shifts = torch.sum(torch.abs(cross_corr_matrix), dim=1)
-    ref_idx = torch.argmin(abs_sum_shifts)
-    return ref_idx
+    abs_sum_shifts = np.sum(np.abs(cross_corr_matrix), axis=1)
+    return abs_sum_shifts.argmin()
 
 
 def align_to_reference(cross_corr_matrix):
@@ -174,9 +163,9 @@ def shift_spectrograms(spec_list, shifts):
 
     Parameters
     ----------
-    spec_list : list of torch.Tensor
+    spec_list : list of pd.DataFrame
         List of spectrograms.
-    shifts : torch.Tensor
+    shifts : np.ndarray
         Shift amounts for each spectrogram.
 
     Returns
@@ -186,7 +175,7 @@ def shift_spectrograms(spec_list, shifts):
     """
     shifted_spectrograms = []
     for shift_, spec in zip(shifts, spec_list):
-        shifted_spec = spec.shift(periods=int(shift_))
+        shifted_spec = spec.shift(int(shift_))
         shifted_spectrograms.append(shifted_spec)
     return shifted_spectrograms
 

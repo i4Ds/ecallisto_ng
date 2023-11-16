@@ -3,9 +3,9 @@ import torch
 
 from ecallisto_ng.combine_antennas.utils import (
     align_to_reference,
+    get_cross_corr_matrix,
     make_frequencies_match_spectograms,
     make_times_match_spectograms,
-    pairwise_cross_corr,
     shift_spectrograms,
 )
 from ecallisto_ng.data_processing.utils import (
@@ -36,7 +36,7 @@ def match_spectrograms(datas):
     return data_processed
 
 
-def sync_spectrograms(datas, method="maximize_cross_correlation"):
+def sync_spectrograms(dfs, shifts=None, method="maximize_cross_correlation"):
     """
     Synchronize a list of spectrograms based on pairwise cross-correlation.
     If the nans are not removed, this method does not work because it can
@@ -44,8 +44,11 @@ def sync_spectrograms(datas, method="maximize_cross_correlation"):
 
     Parameters
     ----------
-    datas : list of pd.DataFrame
+    dfs : list of pd.DataFrame
         List of spectrogram DataFrames to be synchronized.
+    shifts : np.ndarray, optional
+        List of shifts to apply to each DataFrame, incase you want to
+        calculate the shift outside of this function.
     method : str, optional
         The method used for synchronization. Currently only supports 'maximize_cross_correlation'.
         Default is 'maximize_cross_correlation'.
@@ -54,31 +57,33 @@ def sync_spectrograms(datas, method="maximize_cross_correlation"):
     -------
     list of pd.DataFrame
         List of synchronized spectrogram DataFrames.
-    int
+    int or None
         Index of the DataFrame used as a reference for synchronization.
     """
     if method != "maximize_cross_correlation":
         raise ValueError("Unsupported method")
+    if shifts is not None:
+        shifted_specs = shift_spectrograms(dfs, shifts)
+        ref_idx = None
 
-    datas_torch = [torch.from_numpy(df.values) for df in datas]
-    if method == "maximize_cross_correlation":
+    elif method == "maximize_cross_correlation":
         # Check if all dataframes have no missing values.
         # if they do, this method does not work
-        for df in datas:
+        for df in dfs:
             if df.isnull().all(axis=1).any():
                 print(
                     "Time axis of a df is all nan. This method does not work with nan values."
                 )
-                return datas, np.nan
-        cross_corr_matrix = pairwise_cross_corr(datas_torch)
+                return dfs, np.nan
+        cross_corr_matrix = get_cross_corr_matrix(dfs)
+        # Find the best reference and align all to it
+        ref_idx, shifts_to_ref = align_to_reference(cross_corr_matrix)
+        shifted_specs = shift_spectrograms(dfs, shifts_to_ref)
     else:
         raise ValueError(
             "Unsupported method. Only 'maximize_cross_correlation' supported"
+            "or provide the shifts manually."
         )
-
-    # Find the best reference and align all to it
-    ref_idx, shifts_to_ref = align_to_reference(cross_corr_matrix)
-    shifted_specs = shift_spectrograms(datas, shifts_to_ref)
 
     return shifted_specs, ref_idx
 
