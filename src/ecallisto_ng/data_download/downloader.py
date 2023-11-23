@@ -63,9 +63,7 @@ def get_ecallisto_data(
         Dictionary of instrument names and their corresponding dataframes. If only one instrument
         is found, it returns a single dataframe.
     """
-    file_urls = get_remote_files_url(
-        start_datetime, end_datetime, instrument_name
-    )
+    file_urls = get_remote_files_url(start_datetime, end_datetime, instrument_name)
     if not file_urls:
         print(
             f"No files found for {instrument_name} between {start_datetime} and {end_datetime}."
@@ -76,7 +74,12 @@ def get_ecallisto_data(
     dfs = download_fits_process_to_pandas(file_urls, verbose)
     dfs = concat_dfs_by_instrument(dfs, verbose)
     dfs = filter_dataframes(
-        dfs, start_datetime, end_datetime, verbose, freq_start=freq_start, freq_end=freq_end
+        dfs,
+        start_datetime,
+        end_datetime,
+        verbose,
+        freq_start=freq_start,
+        freq_end=freq_end,
     )
     if len(dfs) == 1:
         return dfs[list(dfs.keys())[0]]
@@ -134,7 +137,9 @@ def get_ecallisto_data_generator(
     if instrument_name is None:
         # Get all instrument names with available data. This makes the generator more efficient
         # because it doesn't have to check for each instrument name individually.
-        instrument_name = get_instrument_with_available_data(start_datetime, end_datetime) 
+        instrument_name = get_instrument_with_available_data(
+            start_datetime, end_datetime
+        )
 
     for instrument_name_ in instrument_name:
         file_urls = get_remote_files_url(
@@ -163,9 +168,41 @@ def get_ecallisto_data_generator(
             continue
 
 
-def get_instrument_with_available_data(
-    start_date, end_date, instrument_name=None
-):
+def get_instrument_with_available_data(start_date, end_date, instrument_name=None):
+    """
+    Retrieve sorted list of unique instrument names with available data in a specified date range.
+
+    Parameters
+    ----------
+    start_date : pd.Timestamp or None
+        The start date for querying data. If None, the current timestamp is used.
+    end_date : pd.Timestamp or None
+        The end date for querying data. If None, it is set to three days prior to the current timestamp.
+    instrument_name : str, optional
+        Name of the specific instrument to query. If None, all available instruments are considered.
+
+    Returns
+    -------
+    list of str
+        A sorted list of unique instrument names for which data is available in the specified date range.
+        Returns an empty list if no data is found.
+
+    Notes
+    -----
+    - The function depends on `get_remote_files_url` to fetch URLs of available data files.
+    - `extract_instrument_name` is used to parse instrument names from the file URLs.
+    - If both `start_date` and `end_date` are None, the function defaults to a date range from the current date to three days prior.
+
+    Examples
+    --------
+    >>> get_instrument_with_available_data(pd.Timestamp('2023-01-01'), pd.Timestamp('2023-01-10'), 'Instrument')
+    ['InstrumentA', 'InstrumentB', 'InstrumentX']
+    """
+    if start_date is None or end_date is None:
+        # Set start_date to now
+        start_date = pd.Timestamp.now()
+        # Set end_date to 1 day ago
+        end_date = start_date - pd.Timedelta(days=3)
     file_urls = get_remote_files_url(start_date, end_date, instrument_name)
     if not file_urls:
         print(

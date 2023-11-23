@@ -12,66 +12,6 @@ from ecallisto_ng.plotting.utils import (
 )
 
 
-def plot_spectogram(
-    df,
-    instrument_name=None,
-    start_datetime=None,
-    end_datetime=None,
-    title="Radio Flux Density",
-    resolution=1440,
-    font_size=18,
-    fig_size=(600, 1000),
-    color_scale=px.colors.sequential.Plasma,
-):
-    # Create a new dataframe with rounded column names
-    df = df.copy()
-    df.columns = df.columns.astype(float)
-
-    # If instrument name is not provided, try to get it from the dataframe
-    if instrument_name is None:
-        instrument_name = df.attrs.get("FULLNAME", "Unknown")
-
-    # If start_datetime is not provided, try to get it from the dataframe
-    if start_datetime is None:
-        start_datetime = df.index.min()
-    if end_datetime is None:
-        end_datetime = df.index.max()
-
-    # Make datetime prettier
-    if isinstance(start_datetime, str):
-        start_datetime = pd.to_datetime(start_datetime)
-    if isinstance(end_datetime, str):
-        end_datetime = pd.to_datetime(end_datetime)
-
-    # If resolution is provided, resample the dataframe
-    if resolution is not None:
-        resample_freq = calculate_resample_freq(
-            start_datetime, end_datetime, resolution
-        )
-        resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
-
-        df = df.resample(resample_freq).max()
-
-    fig = px.imshow(
-        df.T,
-        color_continuous_scale=color_scale,
-        zmin=df.min().min(),
-        zmax=df.max().max(),
-        height=fig_size[0],
-        width=fig_size[1],
-    )
-    fig.update_layout(
-        title=f"{instrument_name} {title}",
-        xaxis_title="Datetime [UT]",
-        yaxis_title="Frequency [MHz]",
-        font=dict(family="Computer Modern, monospace", size=font_size, color="#4D4D4D"),
-        plot_bgcolor="black",
-        xaxis_showgrid=True,
-        yaxis_showgrid=False,
-    )
-    return fig
-
-
 def plot_spectogram_mpl(
     df,
     instrument_name=None,
@@ -180,12 +120,81 @@ def plot_spectogram_mpl(
     return fig
 
 
+def plot_spectogram(
+    df,
+    instrument_name=None,
+    start_datetime=None,
+    end_datetime=None,
+    title="Radio Flux Density",
+    resolution=1440,
+    samplig_method="max",
+    font_size=18,
+    fig_size=(600, 1000),
+    color_scale=px.colors.sequential.Plasma,
+):
+    # Create a new dataframe with rounded column names
+    df = df.copy()
+    df.columns = df.columns.astype(float)
+
+    # If instrument name is not provided, try to get it from the dataframe
+    if instrument_name is None:
+        instrument_name = df.attrs.get("FULLNAME", "Unknown")
+
+    # If start_datetime is not provided, try to get it from the dataframe
+    if start_datetime is None:
+        start_datetime = df.index.min()
+    if end_datetime is None:
+        end_datetime = df.index.max()
+
+    # Make datetime prettier
+    if isinstance(start_datetime, str):
+        start_datetime = pd.to_datetime(start_datetime)
+    if isinstance(end_datetime, str):
+        end_datetime = pd.to_datetime(end_datetime)
+
+    # If resolution is provided, resample the dataframe
+    if resolution is not None:
+        resample_freq = calculate_resample_freq(
+            start_datetime, end_datetime, resolution
+        )
+        resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
+
+        # Resample data
+        if samplig_method == "mean":
+            df = df.resample(resample_freq).mean()
+        elif samplig_method == "max":
+            df = df.resample(resample_freq).max()
+        elif samplig_method == "min":
+            df = df.resample(resample_freq).min()
+
+    fig = px.imshow(
+        df.T,
+        color_continuous_scale=color_scale,
+        zmin=df.min().min(),
+        zmax=df.max().max(),
+        height=fig_size[0],
+        width=fig_size[1],
+    )
+    fig.update_layout(
+        title=f"{instrument_name} {title}",
+        xaxis_title="Datetime [UT]",
+        yaxis_title="Frequency [MHz]",
+        font=dict(family="Computer Modern, monospace", size=font_size, color="#4D4D4D"),
+        plot_bgcolor="black",
+        xaxis_showgrid=True,
+        yaxis_showgrid=False,
+    )
+    return fig
+
+
 def plot_with_fixed_resolution_mpl(
     instrument,
     start_datetime_str,
     end_datetime_str,
-    resolution=720,
-    fig_size=(9, 6),
+    samplig_method="max",
+    download_from_local=False,
+    resolution=1440,
+    fig_size=(12, 6),
 ):
     """
     Plots the spectrogram for the given instrument between specified start and end datetime strings
@@ -197,7 +206,7 @@ def plot_with_fixed_resolution_mpl(
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
     - end_datetime_str (str or pd.Timestamp): The ending datetime for the data range.
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
-    - resolution (int, optional): The desired resolution for plotting. Default is 720.
+    - resolution (int, optional): The desired resolution for plotting. Default is 1440.
         Determines the time bucketing for the data aggregation.
     - fig_size (tuple, optional): The desired figure size. Default is (9, 6).
         The figure size is passed to Matplotlib's `figsize` parameter.
@@ -209,16 +218,30 @@ def plot_with_fixed_resolution_mpl(
     end_datetime = pd.to_datetime(end_datetime_str)
 
     # Fetch data
-    df = get_ecallisto_data(start_datetime, end_datetime, instrument)
+    df = get_ecallisto_data(
+        start_datetime,
+        end_datetime,
+        instrument,
+        download_from_local=download_from_local,
+    )
     if len(df) == 0:
         print(NoDataAvailable)
         return None
 
-    # Calculate resampling frequency
-    resample_freq = calculate_resample_freq(start_datetime, end_datetime, resolution)
+    if resolution is not None:
+        # Calculate resampling frequency
+        resample_freq = calculate_resample_freq(
+            start_datetime, end_datetime, resolution
+        )
+        resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
 
-    # Resample data
-    df = df.resample(resample_freq).max()
+        # Resample data
+        if samplig_method == "mean":
+            df = df.resample(resample_freq).mean()
+        elif samplig_method == "max":
+            df = df.resample(resample_freq).max()
+        elif samplig_method == "min":
+            df = df.resample(resample_freq).min()
 
     # Plot
     return plot_spectogram_mpl(
