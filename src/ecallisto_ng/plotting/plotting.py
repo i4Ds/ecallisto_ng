@@ -234,13 +234,12 @@ def plot_with_fixed_resolution_mpl(
             start_datetime, end_datetime, resolution
         )
         resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
-
         # Resample data
-        if samplig_method == "mean":
+        if samplig_method.lower() == "mean":
             df = df.resample(resample_freq).mean()
-        elif samplig_method == "max":
+        elif samplig_method.lower() == "max":
             df = df.resample(resample_freq).max()
-        elif samplig_method == "min":
+        elif samplig_method.lower() == "min":
             df = df.resample(resample_freq).min()
 
     # Plot

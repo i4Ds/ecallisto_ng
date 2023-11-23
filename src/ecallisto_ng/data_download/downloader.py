@@ -204,7 +204,7 @@ def get_instrument_with_available_data(
         # Set start_date to now
         end_date = pd.Timestamp.now()
         # Set end_date to 1 day ago
-        start_date = end_date - pd.Timedelta(days=3)
+        start_date = end_date - pd.Timedelta(days=1)
     file_urls = get_remote_files_url(start_date, end_date, instrument_name)
     if not file_urls:
         print(
