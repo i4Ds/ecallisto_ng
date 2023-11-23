@@ -191,10 +191,11 @@ def plot_with_fixed_resolution_mpl(
     instrument,
     start_datetime_str,
     end_datetime_str,
-    samplig_method="max",
+    sampling_method="max",
     download_from_local=False,
     resolution=1440,
     fig_size=(12, 6),
+    verbose=False,
 ):
     """
     Plots the spectrogram for the given instrument between specified start and end datetime strings
@@ -223,6 +224,7 @@ def plot_with_fixed_resolution_mpl(
         end_datetime,
         instrument,
         download_from_local=download_from_local,
+        verbose=verbose,
     )
     if len(df) == 0:
         print(NoDataAvailable)
@@ -235,11 +237,11 @@ def plot_with_fixed_resolution_mpl(
         )
         resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
         # Resample data
-        if samplig_method.lower() == "mean":
+        if sampling_method.lower() == "mean":
             df = df.resample(resample_freq).mean()
-        elif samplig_method.lower() == "max":
+        elif sampling_method.lower() == "max":
             df = df.resample(resample_freq).max()
-        elif samplig_method.lower() == "min":
+        elif sampling_method.lower() == "min":
             df = df.resample(resample_freq).min()
 
     # Plot
