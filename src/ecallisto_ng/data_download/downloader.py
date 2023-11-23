@@ -21,7 +21,7 @@ from ecallisto_ng.data_download.utils import (
 )
 
 BASE_URL = "http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto"
-LOCAL_URL = "/mnt/nas05/data01/radio/2002-20yy_Callisto/"
+LOCAL_URL = "/mnt/nas05/data01/radio/2002-20yy_Callisto"
 
 
 def get_ecallisto_data(
