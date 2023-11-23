@@ -2,7 +2,7 @@ import fnmatch
 import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import partial
 
 import pandas as pd
@@ -168,7 +168,9 @@ def get_ecallisto_data_generator(
             continue
 
 
-def get_instrument_with_available_data(start_date, end_date, instrument_name=None):
+def get_instrument_with_available_data(
+    start_date=None, end_date=None, instrument_name=None
+):
     """
     Retrieve sorted list of unique instrument names with available data in a specified date range.
 
@@ -200,9 +202,9 @@ def get_instrument_with_available_data(start_date, end_date, instrument_name=Non
     """
     if start_date is None or end_date is None:
         # Set start_date to now
-        start_date = pd.Timestamp.now()
+        end_date = pd.Timestamp.now()
         # Set end_date to 1 day ago
-        end_date = start_date - pd.Timedelta(days=3)
+        start_date = end_date - pd.Timedelta(days=3)
     file_urls = get_remote_files_url(start_date, end_date, instrument_name)
     if not file_urls:
         print(
