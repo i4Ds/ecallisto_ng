@@ -6,7 +6,9 @@ import numpy as np
 import pandas as pd
 
 
-def filter_dataframes(dfs, start_date, end_date, verbose=False, freq_start=None, freq_end=None):
+def filter_dataframes(
+    dfs, start_date, end_date, verbose=False, freq_start=None, freq_end=None
+):
     """
     Filter the dataframes in a dictionary by a date range.
 
