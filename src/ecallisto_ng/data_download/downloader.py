@@ -246,7 +246,7 @@ def fetch_fits_to_pandas(file_url, verbose=False):
         return None
 
 
-def fetch_date_files(date_url, session):
+def fetch_date_files(date_url):
     """
     Fetch and parse file URLs from a given date URL.
 
@@ -262,8 +262,9 @@ def fetch_date_files(date_url, session):
     list of str
         List of file URLs ending with '.gz'.
     """
+    session = requests.Session()
     response = session.get(date_url)
-    if response.status_code == 200:
+    try:
         soup = BeautifulSoup(
             response.content, "lxml"
         )  # using lxml parser because it's faster
@@ -272,8 +273,14 @@ def fetch_date_files(date_url, session):
             for link in soup.find_all("a")
             if link.get("href").endswith(".gz")
         ]
-        return [date_url + file_name for file_name in file_names]
-    return []
+        to_return = [date_url + file_name for file_name in file_names]
+    except Exception as e:
+        print(f"Error fetching {date_url}.")
+        print(e)
+        to_return = []
+    finally:
+        session.close()
+        return to_return
 
 
 def get_remote_files_url(
@@ -309,10 +316,8 @@ def get_remote_files_url(
     ]
 
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-        # Create a session for each worker
-        sessions = [requests.Session() for _ in range(os.cpu_count())]
         # Map each URL to a fetch function with a session
-        results = executor.map(fetch_date_files, date_urls, sessions)
+        results = executor.map(fetch_date_files, date_urls)
 
     # Flatten the results
     results = [item for sublist in results for item in sublist]
@@ -333,9 +338,5 @@ def get_remote_files_url(
         <= file_datetime
         <= end_date + timedelta(minutes=15)
     ]  # Timedelta because a file contains up to 15 minutes of data
-
-    # Close all sessions
-    for session in sessions:
-        session.close()
 
     return file_urls
