@@ -9,9 +9,9 @@ def calculate_resample_freq(start_datetime, end_datetime, resolution):
 
 def return_strftime_based_on_range(time_range):
     # Decide on the date-time format based on the time range
-    if time_range > pd.Timedelta(weeks=1):
+    if time_range > pd.Timedelta(days=1):
         date_format = "%Y-%m-%d"
-    elif time_range > pd.Timedelta(days=1):
+    elif time_range > pd.Timedelta(hours=1):
         date_format = "%Y-%m-%d %H:%M"
     else:
         date_format = "%Y-%m-%d %H:%M:%S"

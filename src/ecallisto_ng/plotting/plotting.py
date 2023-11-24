@@ -194,7 +194,7 @@ def plot_with_fixed_resolution_mpl(
     sampling_method="max",
     download_from_local=False,
     resolution=1440,
-    fig_size=(12, 6),
+    fig_size=(9, 6),
     verbose=False,
 ):
     """

@@ -1,6 +1,6 @@
 [project]
 name = "ecallisto_ng"
-version = "0.6.1"
+version = "0.6.2"
 authors = [{name = "Vincenzo Timmel", email = "vincenzo.timmel@fhnw.ch"}]
 description = "A Python package for the fetching (and some processing) of eCallisto data based on request and pandas."
 readme = "README.md"
