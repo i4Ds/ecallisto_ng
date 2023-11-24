@@ -11,6 +11,7 @@ from ecallisto_ng.combine_antennas.utils import (
 from ecallisto_ng.data_processing.utils import (
     apply_median_filter,
     elimwrongchannels,
+    intensity_to_db,
     mean_filter,
     subtract_constant_background,
 )
@@ -90,6 +91,7 @@ def sync_spectrograms(dfs, shifts=None, method="maximize_cross_correlation"):
 
 def preprocess_data(
     datas,
+    db_space=True,
     min_n_frequencies=30,
     freq_range=[20, 80],
     filter_type=None,
@@ -141,6 +143,9 @@ def preprocess_data(
                 )
                 continue
 
+            if db_space:
+                data = intensity_to_db(data)
+            # Convert to dB
             # Data transformations
             data = fill_missing_timesteps_with_nan(data)
             data = elimwrongchannels(data)

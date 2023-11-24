@@ -180,7 +180,7 @@ def shift_spectrograms(spec_list, shifts):
     return shifted_spectrograms
 
 
-def round_frequencies_to_nearest_bin(dfs, bin_size):
+def round_frequencies_to_nearest_bin(dfs, bin_size, method="rebin"):
     """
     Rounds each frequency column in multiple DataFrames to the nearest bin edge and groups them.
     This is so that the frequencies are consistent across multiple DataFrames and we don't
@@ -192,6 +192,8 @@ def round_frequencies_to_nearest_bin(dfs, bin_size):
         List of DataFrames containing the spectrograms. Columns in each DataFrame are frequencies.
     bin_size : float
         The size of the frequency bins.
+    method : str, optional
+        The method used for rounding. Either by rebinning or by rounding to the nearest bin edge.
 
     Returns
     -------
@@ -200,7 +202,10 @@ def round_frequencies_to_nearest_bin(dfs, bin_size):
     """
     rounded_dfs = []
     for df in dfs:
-        rounded_df = round_col_to_nearest_bin(df.copy(), bin_size)
+        if method == "round":
+            rounded_df = round_col_to_nearest_bin(df.copy(), bin_size)
+        elif method == "rebin":
+            rounded_df = rebin_dataframe(df.copy(), bin_size)
         rounded_dfs.append(rounded_df)
 
     return rounded_dfs
@@ -230,3 +235,61 @@ def round_col_to_nearest_bin(df, bin_size):
 
     # Group by rounded frequencies and average the values
     return df.T.groupby(df.columns).mean().T
+
+
+def compute_weights(old_freqs, new_freqs, new_res):
+    """
+    Vectorized computation of weights for each old frequency based on their overlap with the new frequency bins.
+
+    Parameters:
+    old_freqs (np.array): Array of old frequency values.
+    new_freqs (np.array): Array of new frequency bin values.
+    new_res (float): New resolution.
+
+    Returns:
+    np.array: 2D array of weights for each old frequency against each new frequency.
+    """
+    # Calculate the boundaries of each old frequency bin
+    left_bounds = np.zeros_like(old_freqs)
+    right_bounds = np.zeros_like(old_freqs)
+
+    left_bounds[1:] = (old_freqs[1:] + old_freqs[:-1]) / 2
+    left_bounds[0] = old_freqs[0] - (old_freqs[1] - old_freqs[0]) / 2
+
+    right_bounds[:-1] = left_bounds[1:]
+    right_bounds[-1] = old_freqs[-1] + (old_freqs[-1] - old_freqs[-2]) / 2
+
+    # Calculate overlaps for each old frequency against each new frequency
+    new_freqs_expanded = new_freqs.reshape(1, -1)
+    overlaps = np.maximum(
+        np.minimum(right_bounds.reshape(-1, 1), new_freqs_expanded + new_res / 2)
+        - np.maximum(left_bounds.reshape(-1, 1), new_freqs_expanded - new_res / 2),
+        0,
+    )
+
+    return overlaps
+
+
+def rebin_dataframe(df, new_res):
+    """
+    Optimized rebinning of DataFrame using vectorized operations.
+
+    Parameters:
+    df (pd.DataFrame): DataFrame with datetime index and frequency columns.
+    new_res (float): New resolution.
+
+    Returns:
+    pd.DataFrame: Rebinned DataFrame.
+    """
+    old_freqs = np.array(df.columns, dtype=float)
+    start_freq = new_res * np.round(old_freqs.min() / new_res)
+    new_freqs = np.arange(start_freq, old_freqs.max(), new_res)
+    weights = compute_weights(old_freqs, new_freqs, new_res)
+
+    # Normalize weights and compute rebinned values
+    normalized_weights = weights / weights.sum(axis=0)
+    rebinned_values = df.values @ normalized_weights
+
+    rebinned_df = pd.DataFrame(rebinned_values, index=df.index, columns=new_freqs)
+
+    return rebinned_df

@@ -227,3 +227,64 @@ def subtract_rolling_background(
     else:
         raise ValueError("`how` must be 'median' or 'quantile'")
     return df - df_rolling
+
+
+def subtract_low_signal_noise_background(df):
+    """
+    Background subtraction method adapted for DataFrame.
+    The average and the standard deviation of each row will be calculated and subtracted from the DataFrame.
+
+    Parameters
+    ----------
+    df : DataFrame
+        DataFrame representing the spectrogram with time as index and frequencies as columns.
+    """
+    df_ = df.copy()
+
+    # Subtract the average of each row (time point) from that row
+    row_averages = df_.mean(axis=1)
+    df_ = df_.sub(row_averages, axis=0)
+
+    # Calculate standard deviation for each column (frequency bin)
+    column_sdevs = df_.std(axis=1)
+
+    # Select columns (frequency bins) with the lowest standard deviations (assumed background)
+    n_columns = len(column_sdevs)
+    n_background = int(n_columns * 0.05)
+    background_cols = column_sdevs.nsmallest(n_background).index
+    background = df_.loc[background_cols].mean()
+
+    # Subtract this background from each column of the DataFrame
+    return df - background
+
+
+def intensity_to_db(df, factor=0.0386):
+    """
+    Convert Callisto values (W) to db.
+    Based on the following forumla:
+    db = 10 ** (I * factor)
+
+    Parameters:
+    df (pd.DataFrame): DataFrame with Callisto values.
+    factor (float): Conversion factor in the formula.
+
+    Returns:
+    pd.DataFrame: DataFrame with converted intensity values.
+    """
+    return 10 ** (df * factor)
+
+
+def db_to_intensity(df, factor=0.0386):
+    """
+    Convert db (I) back to Callisto values (W).
+    Based on the following forumla:
+    db = 10 ** (I * factor)
+
+    Parameters:
+    df (pd.DataFrame): DataFrame with intensity values.
+    factor (float): Conversion factor in the formula.
+
+    Returns:
+    pd.DataFrame: DataFrame with converted Callisto values.
+    """
+    return np.log10(df) / factor
