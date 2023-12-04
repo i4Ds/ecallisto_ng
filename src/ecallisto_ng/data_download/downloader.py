@@ -60,8 +60,7 @@ def get_ecallisto_data(
     Returns
     -------
     dict of str: `~pandas.DataFrame` or `~pandas.DataFrame`
-        Dictionary of instrument names and their corresponding dataframes. If only one instrument
-        is found, it returns a single dataframe.
+        Dictionary of instrument names and their corresponding dataframes.
     """
     file_urls = get_remote_files_url(start_datetime, end_datetime, instrument_name)
     if not file_urls:
@@ -81,10 +80,7 @@ def get_ecallisto_data(
         freq_start=freq_start,
         freq_end=freq_end,
     )
-    if len(dfs) == 1:
-        return dfs[list(dfs.keys())[0]]
-    else:
-        return dfs
+    return dfs
 
 
 def get_ecallisto_data_generator(

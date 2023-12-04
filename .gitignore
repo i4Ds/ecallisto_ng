@@ -166,4 +166,7 @@ combination_of_signals.ipynb
 combination_of_signals_download.ipynb
 example/data_virtual_antenna/*.parquet
 example/data_virtual_antenna_arnold_benz/*
-example/*.png
+example/**/*.png
+example/combination_of_signals_quantile_crosscorrelation_arnold.ipynb
+example/polarisation.ipynb
+*.png

@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.io as pio
 
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
 from ecallisto_ng.data_fetching.get_data import NoDataAvailable
@@ -126,6 +127,7 @@ def plot_spectogram(
     start_datetime=None,
     end_datetime=None,
     title="Radio Flux Density",
+    save_path=None,
     resolution=1440,
     samplig_method="max",
     font_size=18,
@@ -184,6 +186,8 @@ def plot_spectogram(
         xaxis_showgrid=True,
         yaxis_showgrid=False,
     )
+    if save_path is not None:
+        pio.write_image(fig, save_path)  # Save the figure
     return fig
 
 
