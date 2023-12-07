@@ -260,7 +260,14 @@ def subtract_low_signal_noise_background(df):
 
 def intensity_to_db(df, factor=0.0386):
     """
-    Convert Callisto values (W) to db.
+    Please use convert_values instead.
+    """
+    return convert_values(df, factor)
+
+
+def convert_values(df, factor=0.0386):
+    """
+    Convert Callisto values (W).
     Based on the following forumla:
     db = 10 ** (I * factor)
 

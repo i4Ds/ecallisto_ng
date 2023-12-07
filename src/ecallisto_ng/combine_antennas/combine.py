@@ -10,12 +10,10 @@ from ecallisto_ng.combine_antennas.utils import (
 )
 from ecallisto_ng.data_processing.utils import (
     apply_median_filter,
-    elimwrongchannels,
-    intensity_to_db,
+    convert_values,
     mean_filter,
-    subtract_constant_background,
+    subtract_low_signal_noise_background,
 )
-from ecallisto_ng.plotting.utils import fill_missing_timesteps_with_nan
 
 
 def match_spectrograms(datas):
@@ -144,24 +142,19 @@ def preprocess_data(
                 continue
 
             if db_space:
-                data = intensity_to_db(data)
+                data = convert_values(data)
             # Convert to dB
             # Data transformations
-            data = fill_missing_timesteps_with_nan(data)
-            data = elimwrongchannels(data)
+            # data = fill_missing_timesteps_with_nan(data)
+            # data = elimwrongchannels(data)
             if subtract_background:
-                data = subtract_constant_background(data, 100)
+                data = subtract_low_signal_noise_background(data)
 
             # Apply filter if specified
             if filter_type == "median":
                 data = apply_median_filter(data)
             if filter_type == "mean":
                 data = mean_filter(data)
-
-            # Cap min value to 0 and scale to [0, 1]
-            data[data < 0] = 0
-            data = (data - data.min()) / (data.max() - data.min())
-            data.fillna(0, inplace=True)
 
             # Append processed data
             data_processed.append(data)

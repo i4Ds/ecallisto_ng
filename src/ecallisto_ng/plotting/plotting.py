@@ -24,6 +24,13 @@ def plot_spectogram_mpl(
 ):
     # Create a new dataframe with rounded column names
     df = df.copy()
+    # Check if it's a dictionary. If it is, take the first key
+    if isinstance(df, dict):
+        if len(df) > 1:
+            Warning(
+                "The dataframe has more than one instrument. Only the first instrument will be used."
+            )
+        df = df[list(df.keys())[0]]
 
     # Drop any rows where the datetime col is NaN
     df = df[df.index.notnull()]
@@ -134,6 +141,13 @@ def plot_spectogram(
     fig_size=(600, 1000),
     color_scale=px.colors.sequential.Plasma,
 ):
+    # Check if it's a dictionary. If it is, take the first key
+    if isinstance(df, dict):
+        if len(df) > 1:
+            Warning(
+                "The dataframe has more than one instrument. Only the first instrument will be used."
+            )
+        df = df[list(df.keys())[0]]
     # Create a new dataframe with rounded column names
     df = df.copy()
     df.columns = df.columns.astype(float)
@@ -230,6 +244,14 @@ def plot_with_fixed_resolution_mpl(
         download_from_local=download_from_local,
         verbose=verbose,
     )
+    # Check if it's a dictionary. If it is, take the first key
+    if isinstance(df, dict):
+        if len(df) > 1:
+            Warning(
+                "The dataframe has more than one instrument. Only the first instrument will be used."
+            )
+        df = df[list(df.keys())[0]]
+
     if len(df) == 0:
         print(NoDataAvailable)
         return None
