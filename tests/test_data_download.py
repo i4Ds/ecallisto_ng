@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from ecallisto_ng.data_download.downloader import (
-    get_ecallisto_data,
+    get_ecallisto_data_generator,
     get_instrument_with_available_data,
 )
 
@@ -35,33 +35,26 @@ def test_get_avail_instruments():
         assert instrument in avail
 
 
-def test_get_data_multiple():
-    start_datetime = datetime(2021, 5, 7, 0, 00, 0)
-    end_datetime = datetime(2021, 5, 7, 23, 59, 0)
-
-    # get_ecallisto_data returns a dictionary, with the keys being the instrument names and the values being the dataframes
-    dfs = get_ecallisto_data(
-        start_datetime, end_datetime, instrument_name="ASSA", verbose=True
-    )
-
+def test_get_data_multiple(assa_dataframes):
+    assert len(assa_dataframes) == 3
     assert all(
         [
             x in ["Australia-ASSA_01", "Australia-ASSA_02", "Australia-ASSA_60"]
-            for x in dfs.keys()
+            for x in assa_dataframes.keys()
         ]
     )
-    assert dfs["Australia-ASSA_01"].shape == (172490, 193)
+    assert assa_dataframes["Australia-ASSA_01"].shape == (172490, 193)
 
 
-def test_get_data_single():
+def test_get_data_single(assa01_dataframe):
+    assert len(assa01_dataframe) == 1
+    assert all([x in ["Australia-ASSA_01"] for x in assa01_dataframe.keys()])
+    assert assa01_dataframe["Australia-ASSA_01"].shape == (172490, 193)
+
+
+def test_data_generator():
     start_datetime = datetime(2021, 5, 7, 0, 00, 0)
     end_datetime = datetime(2021, 5, 7, 23, 59, 0)
-
-    # get_ecallisto_data returns a dictionary, with the keys being the instrument names and the values being the dataframes
-    dfs = get_ecallisto_data(
-        start_datetime, end_datetime, instrument_name="Australia-ASSA_01", verbose=True
-    )
-
-    assert all([x in ["Australia-ASSA_01"] for x in dfs.keys()])
-    assert len(dfs) == 1
-    assert dfs["Australia-ASSA_01"].shape == (172490, 193)
+    generator = get_ecallisto_data_generator(start_datetime, end_datetime, ["ASSA"])
+    for key, _ in generator:
+        assert key in ["Australia-ASSA_01", "Australia-ASSA_02", "Australia-ASSA_60"]
