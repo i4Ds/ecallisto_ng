@@ -170,3 +170,4 @@ example/**/*.png
 example/combination_of_signals_quantile_crosscorrelation_arnold.ipynb
 example/polarisation.ipynb
 *.png
+_dev/*

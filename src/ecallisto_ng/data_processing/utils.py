@@ -229,7 +229,7 @@ def subtract_rolling_background(
     return df - df_rolling
 
 
-def subtract_low_signal_noise_background(df):
+def subtract_low_signal_noise_background(df, percentile=0.05):
     """
     Background subtraction method adapted for DataFrame.
     The average and the standard deviation of each row will be calculated and subtracted from the DataFrame.
@@ -238,6 +238,8 @@ def subtract_low_signal_noise_background(df):
     ----------
     df : DataFrame
         DataFrame representing the spectrogram with time as index and frequencies as columns.
+    percentile : float, default 0.05
+        Percentile of the lowest standard deviations to use as background.
     """
     df_ = df.copy()
 
@@ -250,7 +252,7 @@ def subtract_low_signal_noise_background(df):
 
     # Select columns (frequency bins) with the lowest standard deviations (assumed background)
     n_columns = len(column_sdevs)
-    n_background = int(n_columns * 0.05)
+    n_background = int(n_columns * percentile)
     background_cols = column_sdevs.nsmallest(n_background).index
     background = df_.loc[background_cols].mean()
 
@@ -258,16 +260,9 @@ def subtract_low_signal_noise_background(df):
     return df - background
 
 
-def intensity_to_db(df, factor=0.0386):
+def intensity_to_linear(df, factor=0.0386):
     """
-    Please use convert_values instead.
-    """
-    return convert_values(df, factor)
-
-
-def convert_values(df, factor=0.0386):
-    """
-    Convert Callisto values (W).
+    Convert Callisto values (W) and make them linear.
     Based on the following forumla:
     db = 10 ** (I * factor)
 
@@ -281,7 +276,7 @@ def convert_values(df, factor=0.0386):
     return 10 ** (df * factor)
 
 
-def db_to_intensity(df, factor=0.0386):
+def linear_to_intensity(df, factor=0.0386):
     """
     Convert db (I) back to Callisto values (W).
     Based on the following forumla:

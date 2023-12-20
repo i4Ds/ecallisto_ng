@@ -10,7 +10,7 @@ from ecallisto_ng.combine_antennas.utils import (
 )
 from ecallisto_ng.data_processing.utils import (
     apply_median_filter,
-    convert_values,
+    intensity_to_linear,
     mean_filter,
     subtract_low_signal_noise_background,
 )
@@ -142,7 +142,7 @@ def preprocess_data(
                 continue
 
             if db_space:
-                data = convert_values(data)
+                data = intensity_to_linear(data)
             # Convert to dB
             # Data transformations
             # data = fill_missing_timesteps_with_nan(data)
