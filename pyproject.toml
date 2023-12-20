@@ -15,6 +15,7 @@ classifiers = [
 dependencies = [
     'numpy>=1.21.6',
     'pandas>=2.0.0',
+    'openpyxl',
     'plotly',
     'kaleido',
     'matplotlib',
