@@ -1,7 +1,10 @@
+import os
+import sys
 import torch
 import mlflow
 import torchvision
 import numpy as np
+import ecallisto_ng
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -26,7 +29,13 @@ class FlareDetection:
 
     """
 
-    def __init__(self, model_id="a853ec9b54244b4ab37dce5498597fd3", standard_cnn=True, device=None):
+    def __init__(
+        self,
+        model_id="a853ec9b54244b4ab37dce5498597fd3",
+        device=None,
+        standard_cnn=True,
+        tracking_uri="https://dagshub.com/FlareSense/Flaresense.mlflow",
+    ):
         """
         Prepares and initializes an instance of the class.
 
@@ -41,10 +50,14 @@ class FlareDetection:
         self.device = device
         self.standard_cnn = standard_cnn
 
-        # Set the MLflow tracking URI for model retrieval
-        mlflow.set_tracking_uri("https://dagshub.com/FlareSense/Flaresense.mlflow")
+        # Add ecallisto_ng to the path, because of relative imports in the .pth files
+        package_dir = os.path.dirname(ecallisto_ng.__file__)
+        desired_dir = os.path.dirname(package_dir)  # src/ecallisto_ng
+        desired_dir = os.path.dirname(desired_dir)  # src
+        sys.path.append(desired_dir)
 
         # Load the PyTorch model using MLflow and move it to the specified device
+        mlflow.set_tracking_uri(tracking_uri)
         self.model = mlflow.pytorch.load_model(f"runs:/{model_id}/model/").to(self.device)
         self.model.eval()
 
