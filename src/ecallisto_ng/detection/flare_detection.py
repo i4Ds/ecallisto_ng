@@ -1,21 +1,29 @@
 import os
 import sys
-import torch
-import mlflow
-import torchvision
-import numpy as np
-import ecallisto_ng
-import pandas as pd
-import matplotlib.pyplot as plt
-
 from collections import defaultdict
-from ecallisto_ng.plotting.plotting import plot_spectogram_mpl
+
+import matplotlib.pyplot as plt
+import mlflow
+import numpy as np
+import pandas as pd
+import torch
+import torchvision
+from datetime import timedelta
+import ecallisto_ng
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
+from ecallisto_ng.plotting.plotting import plot_spectogram_mpl
 
 
 class FlareDetection:
     """
     Class for detecting flares in solar radio data using a pre-trained deep learning model.
+    This is the result of the FlareSense project, a P5 project at I4ds/FHNW. For more information, see:
+    https://github.com/i4Ds/FlareSense
+
+    Authors: https://github.com/patschue, https://github.com/gabrieltorresgamez
+    Supervisor: https://www.fhnw.ch/de/personen/andre-csillaghy
+    Advisor: https://github.com/kenfus
+
 
     Args:
         model_id (str): The unique identifier of the pre-trained model to use.
@@ -32,6 +40,7 @@ class FlareDetection:
     def __init__(
         self,
         model_id="a853ec9b54244b4ab37dce5498597fd3",
+        image_size=[224, 224],
         device=None,
         standard_cnn=True,
         tracking_uri="https://dagshub.com/FlareSense/Flaresense.mlflow",
@@ -46,9 +55,16 @@ class FlareDetection:
         """
         if device is None:
             # If no device is specified, use "cuda" if available, else "mps" if supported, else "cpu"
-            device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+            device = (
+                "cuda"
+                if torch.cuda.is_available()
+                else "mps"
+                if torch.backends.mps.is_available()
+                else "cpu"
+            )
         self.device = device
         self.standard_cnn = standard_cnn
+        self.image_size = image_size
 
         # Add ecallisto_ng to the path, because of relative imports in the .pth files
         package_dir = os.path.dirname(ecallisto_ng.__file__)
@@ -58,10 +74,12 @@ class FlareDetection:
 
         # Load the PyTorch model using MLflow and move it to the specified device
         mlflow.set_tracking_uri(tracking_uri)
-        self.model = mlflow.pytorch.load_model(f"runs:/{model_id}/model/").to(self.device)
+        self.model = mlflow.pytorch.load_model(f"runs:/{model_id}/model/").to(
+            self.device
+        )
         self.model.eval()
 
-    def preprocess(self, image, length=[224, 224]):
+    def preprocess(self, image, length=None):
         """
         Preprocess input solar radio data for prediction.
 
@@ -73,6 +91,8 @@ class FlareDetection:
             torch.Tensor: Preprocessed image data as a torch.Tensor.
 
         """
+        if length is None:
+            length = self.image_size
         length_s = torch.tensor((image.index.max() - image.index.min()).total_seconds())
         resampling_s = torch.round((length_s / length[0])).int().item()
         image = image.resample(f"{resampling_s}s").max()
@@ -81,14 +101,14 @@ class FlareDetection:
         image = torch.tensor(image).float()
         return image
 
-    def detect(self, datetime, instrument="Australia-ASSA_62", window_length="1h"):
+    def detect(self, datetime, instrument="Australia-ASSA_62", window_length=timedelta(minutes=60)):
         """
         Detect flares in solar radio data for a given datetime, instrument, and window length.
 
         Args:
             datetime (str or pd.Timestamp): Date and time to start flare detection.
             instrument (str, optional): Name of the radio instrument. Default is "Australia-ASSA_62".
-            window_length (str, optional): Length of the time window for detection. Default is "1h".
+            window_length (datetime, optional): Length of the time window for detection. Default is 60 minutes.
 
         Returns:
             tuple: A tuple containing:
@@ -112,35 +132,40 @@ class FlareDetection:
         end_time = datetime + window_length
         print(f"Detecting flares from {start_time} to {end_time} on {instrument}")
 
-        # If end_time is in another day, throw an error (allow exactly 00:00:00)
-        if end_time.day != start_time.day and end_time != pd.to_datetime(end_time.date()):
-            raise ValueError("API currently does not handle data crossing the midnight boundary")
 
         # Get data for the specified time range and instrument
         data = get_ecallisto_data(start_time, end_time, instrument)
         if data == {}:
             print(f"No data found for {start_time} - {end_time} on {instrument}")
             return None
+        
         data = data[instrument]
+        # Update start_time and end_time to the actual data range
+        start_time = data.index.min()
+        end_time = data.index.max()
+        window_length = end_time - start_time
 
         # Generate 15min windows of data
         img_tensor = []
-        n_predictions = int((window_length.total_seconds() // 60) - 15) + 1
-        for i in range(n_predictions):
-            delta_start = pd.to_timedelta(i, unit="m")
-            delta_end = pd.to_timedelta(i + 15, unit="m")
-
+        n_predictions = 0
+        while start_time + pd.to_timedelta("15min") <= end_time:
             data_temp = data.copy()
-            data_temp = data_temp.loc[start_time + delta_start : start_time + delta_end]
+            data_temp = data_temp.loc[start_time: start_time + pd.to_timedelta("15min")]
+            if data_temp.shape[0] == 0:
+                continue
 
             # Preprocess the data for prediction
             data_temp = self.preprocess(data_temp)
             data_temp = data_temp.unsqueeze(0)
+            data_temp = torchvision.transforms.functional.resize(
+                data_temp, [224, 224], antialias=True
+                )
             img_tensor.append(data_temp)
+            start_time = start_time + pd.to_timedelta("1min")
+            n_predictions += 1
 
-        # Stack the 15min windows into a single tensor and resize to 224x224
+        # Stack the 15min windows into a single tensor
         img_tensor = torch.stack(img_tensor).to(self.device)
-        img_tensor = torchvision.transforms.functional.resize(img_tensor, [224, 224], antialias=True)
 
         # If the model is not a custom model, expand the tensor to 3 color channels
         if self.standard_cnn:
@@ -186,4 +211,4 @@ class FlareDetection:
         # Get the figure
         fig = plt.gca().get_figure()
 
-        return data, minute_by_minute, fig
+        return data, minute_by_minute, predictions, fig

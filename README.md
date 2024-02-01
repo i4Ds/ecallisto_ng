@@ -25,12 +25,21 @@ he package is built with Python 3.9 and primarily uses the Pandas library for da
 ## PyPI
 Available on PyPI: https://pypi.org/project/ecallisto-ng/
 
-## Dev Installation
-To install this package, clone this repository and use pip for installation. Execute the following command in your terminal:
-```pip install -e .```
+## Installation
+To install this package, use pip for installation. Execute the following command in your terminal with basic functionality, such as plotting and data fetching:
+```pip install ecallisto-ng```
+If you want to use the virtual antenna:
+```pip install ecallisto-ng[va]```
+If you want to use the detection of flares, powered by ML:
+```pip install ecallisto-ng[ml]```
 
-### Creation of the virtual Antenna
-Requires [PyTorch](https://pytorch.org/get-started/locally/) installation.
+To use the notebook, please install the notebook dependencies.
+
+## Dev Installation
+Of course, you can also install the package from source. To do so, clone the repository and install the package in editable mode:
+```pip install -e .```
+```pip install -e .[va]```
+```pip install -e .[ml]```
 
 ## Pandas
 Pandas is an open-source data analysis and manipulation tool, pivotal to Ecallisto NG. Learning Pandas is essential for effectively using Ecallisto NG, as it allows for sophisticated data slicing, filtering, and aggregation. More on Pandas: https://pandas.pydata.org/docs/
