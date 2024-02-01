@@ -24,6 +24,8 @@ class FlareDetection:
     Supervisor: https://www.fhnw.ch/de/personen/andre-csillaghy
     Advisor: https://github.com/kenfus
 
+    Currently, only Australia-ASSA-62 is supported as an instrument.
+
 
     Args:
         model_id (str): The unique identifier of the pre-trained model to use.
