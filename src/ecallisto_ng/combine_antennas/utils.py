@@ -29,7 +29,9 @@ def make_times_match_spectograms(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
         df = fill_missing_timesteps_with_nan(
             df, start_datetime=min_datetime, end_datetime=max_datetime
         )
+        df = df.interpolate(method="linear", axis=0, limit_area="inside")
         new_dfs.append(df)
+
     return new_dfs
 
 
@@ -270,6 +272,10 @@ def compute_weights(old_freqs, new_freqs, new_res):
     return overlaps
 
 
+def round_to_nearest(x, base):
+    return base * round(x / base)
+
+
 def rebin_dataframe(df, new_res):
     """
     Optimized rebinning of DataFrame using vectorized operations.
@@ -281,9 +287,11 @@ def rebin_dataframe(df, new_res):
     Returns:
     pd.DataFrame: Rebinned DataFrame.
     """
-    old_freqs = np.array(df.columns, dtype=float)
-    start_freq = new_res * np.round(old_freqs.min() / new_res)
-    new_freqs = np.arange(start_freq, old_freqs.max(), new_res)
+    old_freqs = np.round(np.array(df.columns, dtype=np.float64), 5)
+
+    start_freq = new_res * round_to_nearest(old_freqs.min(), new_res)
+    end_freq = new_res * round_to_nearest(old_freqs.max(), new_res)
+    new_freqs = np.arange(start_freq, end_freq, new_res)
     weights = compute_weights(old_freqs, new_freqs, new_res)
 
     # Normalize weights and compute rebinned values

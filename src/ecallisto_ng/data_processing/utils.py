@@ -163,7 +163,7 @@ def elimwrongchannels(
     return df
 
 
-def subtract_constant_background(df, n=30):
+def subtract_constant_background(df, n=300):
     """
     Subtract a constant background from a spectrogram represented by a pandas DataFrame.
 
