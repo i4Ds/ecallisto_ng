@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "Removing old builds..."
+rm -rf dist/
+rm -rf build/
 echo "Building the package..."
 python -m build
 
