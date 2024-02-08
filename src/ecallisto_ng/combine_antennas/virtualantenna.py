@@ -4,7 +4,7 @@ try:
 except:
     print("PyTorch not found. Please install it.")
 
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import, List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -49,12 +49,16 @@ class EcallistoVirtualAntenna:
         synced_data, ref_idx = sync_spectrograms(matched_data)
         return synced_data, ref_idx
 
-    def combine(
+    def preprocess_match_sync(
         self,
         dfs: List[pd.DataFrame],
         method: Literal["round", "rebin"] = "rebin",
         bin_width: float = 0.2,
     ):
+        if method == "rebin":
+            print(
+                f"Warning! Rebinning is very unstable. When a bin contains only NANs, the whole bin will be NAN."
+            )
         print(f"Combining {len(dfs)} spectograms.")
         data_processed = self._preprocess(dfs)
         print(f"Binning the frequencies with a bin width of {bin_width}.")
@@ -64,4 +68,19 @@ class EcallistoVirtualAntenna:
         print("Matching and syncing the spectograms.")
         synced_data, ref_idx = self._sync_and_match(data_binned)
         print(f"Reference spectogram is {dfs[ref_idx].attrs['INSTRUME']}.")
+
+        # Unlinearize agian
+
         return synced_data, ref_idx
+
+    def combine(
+        self,
+        dfs: List[pd.DataFrame],
+        quantile: float = 0.5,
+    ):
+        torch_shifted = torch.stack([torch.from_numpy(df.values) for df in dfs])
+        torch_quantile = torch.nanquantile(torch_shifted, quantile, dim=0)
+
+        df = pd.DataFrame(torch_quantile, columns=dfs[0].columns, index=dfs[0].index)
+        df.attrs["FULLNAME"] = "VIRTUAL"
+        return df
