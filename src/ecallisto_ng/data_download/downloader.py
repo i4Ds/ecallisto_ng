@@ -67,7 +67,7 @@ def get_ecallisto_data(
         file_urls = get_local_file_paths(start_datetime, end_datetime, instrument_name)
     else:
         file_urls = get_remote_files_url(start_datetime, end_datetime, instrument_name)
-    if not file_urls:
+    if not file_urls and verbose:
         print(
             f"No files found for {instrument_name} between {start_datetime} and {end_datetime}."
         )
@@ -91,6 +91,7 @@ def get_ecallisto_data_generator(
     instrument_name=None,
     freq_start=None,
     freq_end=None,
+    verbose=False,
     base_url=BASE_URL,
 ):
     """
@@ -143,7 +144,7 @@ def get_ecallisto_data_generator(
         file_urls = get_remote_files_url(
             start_datetime, end_datetime, instrument_name_, base_url
         )
-        if not file_urls:
+        if not file_urls and verbose:
             print(
                 f"No files found for {instrument_name} between {start_datetime} and {end_datetime}."
             )
@@ -381,7 +382,8 @@ def get_local_file_paths(
         )
 
         if instrument_name:
-            search_pattern = os.path.join(date_path, f"*{instrument_name}*")
+            glob_pattern = instrument_name_to_globbing_pattern(instrument_name)
+            search_pattern = os.path.join(date_path, f"{glob_pattern}")
         else:
             search_pattern = os.path.join(date_path, "*")
 
