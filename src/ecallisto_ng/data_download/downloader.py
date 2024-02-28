@@ -1,4 +1,5 @@
 import fnmatch
+import glob
 import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
@@ -21,7 +22,7 @@ from ecallisto_ng.data_download.utils import (
 )
 
 BASE_URL = "http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto"
-LOCAL_URL = "/mnt/nas05/data01/radio/2002-20yy_Callisto"
+LOCAL_PATH = "/mnt/nas05/data01/radio/2002-20yy_Callisto"
 
 
 def get_ecallisto_data(
@@ -62,14 +63,15 @@ def get_ecallisto_data(
     dict of str: `~pandas.DataFrame` or `~pandas.DataFrame`
         Dictionary of instrument names and their corresponding dataframes.
     """
-    file_urls = get_remote_files_url(start_datetime, end_datetime, instrument_name)
+    if download_from_local:
+        file_urls = get_local_file_paths(start_datetime, end_datetime, instrument_name)
+    else:
+        file_urls = get_remote_files_url(start_datetime, end_datetime, instrument_name)
     if not file_urls:
         print(
             f"No files found for {instrument_name} between {start_datetime} and {end_datetime}."
         )
         return {}
-    if download_from_local:
-        file_urls = [file_url.replace(BASE_URL, LOCAL_URL) for file_url in file_urls]
     dfs = download_fits_process_to_pandas(file_urls, verbose)
     dfs = concat_dfs_by_instrument(dfs, verbose)
     dfs = filter_dataframes(
@@ -338,3 +340,56 @@ def get_remote_files_url(
     ]  # Timedelta because a file contains up to 15 minutes of data
 
     return file_urls
+
+
+def get_local_file_paths(
+    start_date,
+    end_date,
+    instrument_name=None,
+    base_path=LOCAL_PATH,
+):
+    """
+    Get the local file paths within a date range and optional instrument regex pattern.
+
+    Parameters
+    ----------
+    start_date : datetime-like
+        The start date for the file search.
+    end_date : datetime-like
+        The end date for the file search.
+    instrument_name : str or None
+        The instrument name to match in file paths. If None, all files are considered.
+        Substrings also work, such as 'ALASKA'.
+    base_path : str
+        The base path of the local file directory.
+
+    Returns
+    -------
+    list of str
+        List of file paths that match the criteria.
+    """
+    file_paths = []
+    for date in pd.date_range(start_date, end_date, inclusive="both"):
+        # Define the path for the year, month, and day
+        date_path = os.path.join(
+            base_path, str(date.year), str(date.month).zfill(2), str(date.day).zfill(2)
+        )
+
+        if instrument_name:
+            search_pattern = os.path.join(date_path, f"*{instrument_name}*")
+        else:
+            search_pattern = os.path.join(date_path, "*")
+
+        # Use glob to find files that match the search pattern
+        for file_path in glob.glob(search_pattern):
+            # Assuming extract_datetime_from_filename extracts the datetime from the filename
+            file_datetime = extract_datetime_from_filename(file_path)
+            # Check if the file's datetime is within the range
+            if (
+                start_date - timedelta(minutes=15)
+                <= file_datetime
+                <= end_date + timedelta(minutes=15)
+            ):
+                file_paths.append(file_path)
+
+    return file_paths

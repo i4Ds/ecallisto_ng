@@ -18,7 +18,7 @@ def plot_spectogram_mpl(
     instrument_name=None,
     start_datetime=None,
     end_datetime=None,
-    title="Radio Flux Density",
+    title="Flux",
     fig_size=(9, 6),
     cmap="plasma",
 ):
