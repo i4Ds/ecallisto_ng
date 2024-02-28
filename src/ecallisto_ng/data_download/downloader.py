@@ -217,13 +217,18 @@ def download_fits_process_to_pandas(file_urls, verbose=False):
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         # Use tqdm for progress tracking, passing the total number of tasks
         partial_f = partial(fetch_fits_to_pandas, verbose=verbose)
-        results = list(
-            tqdm(
-                executor.map(partial_f, file_urls),
-                total=len(file_urls),
-                desc="Downloading and processing files",
+        if verbose:
+            # Show progress bar if verbose is True
+            results = list(
+                tqdm(
+                    executor.map(partial_f, file_urls),
+                    total=len(file_urls),
+                    desc="Downloading and processing files",
+                )
             )
-        )
+        else:
+            # Execute without progress bar if verbose is False
+            results = list(executor.map(partial_f, file_urls))
     # Check if any of the results are None
     if verbose and any(result is None for result in results):
         print("Some files could not be downloaded (See traceback above).")
