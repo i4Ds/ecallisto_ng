@@ -11,7 +11,7 @@ from ecallisto_ng.combine_antennas.utils import (
 from ecallisto_ng.data_processing.utils import (
     apply_median_filter,
     intensity_to_linear,
-    linear_to_intensity,
+    min_max_scale_per_column,
     mean_filter,
     subtract_constant_background,
     subtract_low_signal_noise_background,
@@ -97,6 +97,7 @@ def preprocess_data(
     min_n_frequencies,
     freq_range,
     filter_type,
+    filter_size, 
     subtract_background,
     resample_func="MEAN",
 ):
@@ -113,6 +114,8 @@ def preprocess_data(
         Frequency range to keep. Default is [20, 80].
     filter_type : str, optional
         Type of filter to apply ('median' or 'mean'). Default is None.
+    filter_size: tuple(int, int)
+        Size of filter in pixel.
     resample_func : str, optional
         Resampling function to use. Default is 'MEAN'.
 
@@ -153,12 +156,12 @@ def preprocess_data(
 
         # Apply filter if specified
         if filter_type == "median":
-            data = apply_median_filter(data)
+            data = apply_median_filter(data, filter_size)
         if filter_type == "mean":
-            data = mean_filter(data)
+            data = mean_filter(data, filter_size)
 
         # Min max scale data per frequency
-        data = (data - data.min()) / (data.max() - data.min())
+        data = min_max_scale_per_column(data)
 
         # Append processed data
         data_processed.append(data)
