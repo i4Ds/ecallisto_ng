@@ -21,6 +21,11 @@ def plot_spectogram_mpl(
     title="Flux",
     fig_size=(9, 6),
     cmap="plasma",
+    cross_to_plot=None,
+    dot_to_plot=None,
+    cbar_label='Radio Flux', 
+    vmin=None, 
+    vmax=None
 ):
     # Create a new dataframe with rounded column names
     df = df.copy()
@@ -74,6 +79,8 @@ def plot_spectogram_mpl(
         extent=[0, df.shape[0], 0, df.shape[1]],
         cmap=current_cmap,
         interpolation="none",
+        vmin=vmin,
+        vmax=vmax
     )
 
     def find_nearest_idx(array, value):
@@ -102,7 +109,7 @@ def plot_spectogram_mpl(
 
     # Assuming df index is datetime, this will format the x-ticks
     # Compute the spacing required to get close to 30 x-labels
-    spacing = max(1, df.shape[0] // 15)
+    spacing = max(1, df.shape[0] // 8)
 
     x_ticks = np.arange(0, df.shape[0], spacing)
     ax.set_xticks(x_ticks)
@@ -111,18 +118,37 @@ def plot_spectogram_mpl(
         end_datetime - start_datetime
     )
     ax.set_xticklabels(
-        df.index[x_ticks].strftime(strf_format_ticks), rotation=60, ha="center"
+        df.index[x_ticks].strftime(strf_format_ticks), rotation=0, ha="center"
     )
     # Title
-    title = f"{instrument_name} {title} | {sd_str} to {ed_str}"
+    title = f"{instrument_name} {title} | {sd_str} to {ed_str}" if title is not None else ""
     ax.set_title(title, fontsize=16)
     ax.set_xlabel("Time [UT]")
     ax.set_ylabel("Frequency [MHz]")
     ax.grid(False)
 
+    if cross_to_plot is not None:
+        for time, y in zip(cross_to_plot[0], cross_to_plot[1]):
+                # Convert time to the corresponding x-coordinate in the plot
+                x_pos = np.argmin(np.abs(df.index - time))
+
+                # Assuming y is a frequency and needs to be mapped to the reversed y-axis
+                y_transformed = find_nearest_idx(df.columns.astype(float), y)
+                
+                ax.plot(x_pos, y_transformed, 'x', color='black')  # Adding crosses
+
+    if dot_to_plot is not None:
+        for time, y in zip(dot_to_plot[0], dot_to_plot[1]):
+            # Convert time to the corresponding x-coordinate in the plot
+            x_pos = np.argmin(np.abs(df.index - time))
+
+            # Assuming y is a frequency and needs to be mapped to the reversed y-axis
+            y_transformed = find_nearest_idx(df.columns.astype(float), y)
+            
+            ax.plot(x_pos, y_transformed, '+', color='blue')  # Adding crosses
     # Adding colorbar
     cbar = fig.colorbar(cax)
-    cbar.set_label("Amplitude")
+    cbar.set_label(cbar_label)
 
     fig.tight_layout()
     return fig
@@ -193,7 +219,7 @@ def plot_spectogram(
     )
     fig.update_layout(
         title=f"{instrument_name} {title}",
-        xaxis_title="Datetime [UT]",
+        xaxis_title="Time [UT]",
         yaxis_title="Frequency [MHz]",
         font=dict(family="Computer Modern, monospace", size=font_size, color="#4D4D4D"),
         plot_bgcolor="black",
