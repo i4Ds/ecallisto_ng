@@ -32,6 +32,7 @@ nb = ['nbformat', 'ipython', 'ipykernel']
 dev = ['black', 'isort', 'twine', 'build', 'pytest']
 ml = ['mlflow', 'torch', 'torchvision', 'torchmetrics', 'pytorch-lightning']
 va = ['torch']
+all = ['nbformat', 'ipython', 'ipykernel', 'black', 'isort', 'twine', 'build', 'pytest', 'mlflow', 'torch', 'torchvision', 'torchmetrics', 'pytorch-lightning']
 
 [build-system]
 requires = ["setuptools", "wheel"]

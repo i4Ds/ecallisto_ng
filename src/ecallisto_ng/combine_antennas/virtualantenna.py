@@ -34,10 +34,10 @@ class EcallistoVirtualAntenna:
     filter_type : Optional[Literal['median', 'mean']], optional
         Type of filter to apply ('median' or 'mean'), by default None.
     filter_size : Tuple[int, int], optional
-        Size of the filter kernel, by default (3,3).
+        Size of the filter kernel, by default (12,12).
     db_space : bool, optional
         Flag to indicate whether the data is in dB space or not, by default True.
-        
+
     Example
     -------
     >>> virtual_antenna = EcallistoVirtualAntenna(
@@ -45,20 +45,21 @@ class EcallistoVirtualAntenna:
         freq_range=(50, 400),
         subtract_background=True,
         filter_type='median',
-        filter_size=(3, 3),
+        filter_size=(12, 12),
         db_space=True
     )
     >>> dfs = [pd.DataFrame(np.random.rand(100, 100)), pd.DataFrame(np.random.rand(100, 100))]
     >>> synced_data, ref_idx = virtual_antenna.preprocess_match_sync(dfs, method='round', bin_width=0.2)
     >>> combined_spectrogram = virtual_antenna.combine(dfs, quantile=0.5)
     """
+
     def __init__(
         self,
         min_n_frequencies: int = 30,
         freq_range: Optional[Tuple[int, int]] = [-np.inf, np.inf],
         subtract_background: bool = True,
-        filter_type: Optional[Literal['median', 'mean']] = 'median',
-        filter_size: Tuple[int, int] = (3,3), 
+        filter_type: Optional[Literal["median", "mean"]] = "median",
+        filter_size: Tuple[int, int] = (12, 12),
         db_space: bool = True,
     ):
         self.min_n_frequencies = min_n_frequencies
@@ -76,11 +77,11 @@ class EcallistoVirtualAntenna:
             min_n_frequencies=self.min_n_frequencies,
             subtract_background=self.subtract_background,
             filter_type=self.filter_type,
-            filter_size=self.filter_size, 
+            filter_size=self.filter_size,
             freq_range=self.freq_range,
         )
         return data_processed
-    
+
     def _sync_and_match(self, data_processed):
         matched_data = match_spectrograms(data_processed)
         synced_data, ref_idx = sync_spectrograms(matched_data)
@@ -121,25 +122,88 @@ class EcallistoVirtualAntenna:
         print(f"Reference spectogram is {dfs[ref_idx].attrs['INSTRUME']}.")
         return synced_data, ref_idx
 
+    @staticmethod
+    def _combine_quantile(dfs, quantile):
+        torch_shifted = torch.stack([torch.from_numpy(df.values) for df in dfs])
+        torch_quantile = torch.nanquantile(torch_shifted, quantile, dim=0)
+        return pd.DataFrame(torch_quantile, columns=dfs[0].columns, index=dfs[0].index)
+
+    @staticmethod
+    def _combine_loss(dfs, epochs, ignore_ratio, grad_penalty_weight, lr):
+        tensor_list = [torch.tensor(df.values, dtype=torch.float32) for df in dfs]
+        noise_tensor = torch.rand(tensor_list[0].shape, requires_grad=True)
+
+        optimizer = torch.optim.Adam([noise_tensor], lr=lr)
+
+        for epoch in range(epochs):
+            optimizer.zero_grad()
+
+            losses = torch.stack(
+                [torch.nanmean(torch.abs(t - noise_tensor)) for t in tensor_list]
+            )
+
+            # Determine the threshold to ignore the top 10% dataframes
+            threshold = torch.quantile(losses, 1 - ignore_ratio)
+
+            # Compute masked losses, ignoring dataframes with losses above the threshold
+            masked_losses = torch.where(
+                losses > threshold, torch.tensor(0.0, device=losses.device), losses
+            )
+            mae_loss = torch.mean(masked_losses)
+
+            # Calculate the gradient penalty for the noise tensor
+            grad_x = torch.abs(torch.diff(noise_tensor, dim=1))
+            grad_y = torch.abs(torch.diff(noise_tensor, dim=0))
+            grad_penalty = grad_penalty_weight * (
+                torch.mean(grad_x) + torch.mean(grad_y)
+            )
+
+            # Total loss
+            total_loss = mae_loss + grad_penalty
+
+            total_loss.backward()
+            optimizer.step()
+
+            if epoch % 10 == 0:
+                print(f"Epoch {epoch}, Loss: {mae_loss.item()}")
+
+        optimized_noise_df = pd.DataFrame(
+            noise_tensor.detach().numpy(), index=dfs[0].index, columns=dfs[0].columns
+        )
+
+        return optimized_noise_df
+
     def combine(
         self,
         dfs: List[pd.DataFrame],
+        method: Literal["quantile", "loss"] = "quantile",
         quantile: float = 0.5,
-    ):
+        epochs: int = 1000,
+        ignore_ratio: float = 0.1,
+        grad_penalty_weight: float = 0.001,
+        lr: float = 0.01,
+    ) -> pd.DataFrame:
         """
-        Combines multiple spectrograms into a virtual antenna spectrogram using quantile stacking.
-        This function computes the quantile across the stack of spectrograms at each time-frequency point.
+        Combines multiple spectrograms into a virtual antenna spectrogram.
+        This function provides different methods for combining the spectrograms.
 
         Parameters:
         - dfs (List[pd.DataFrame]): List of spectrogram DataFrames to combine.
+        - method (str): Method for combining the spectrograms. Options: 'quantile', 'loss'. Defaults to 'quantile'.
         - quantile (float): Quantile to use for stacking. Defaults to 0.5 (median).
+        - epochs (int): Number of epochs for optimization. Defaults to 1000.
+        - ignore_ratio (float): Ratio of top loss dataframes to ignore. Defaults to 0.1.
+        - grad_penalty_weight (float): Weight for the gradient penalty. Defaults to 0.001.
+        - lr (float): Learning rate for optimization. Defaults to 0.01.
 
         Returns:
         - pd.DataFrame: DataFrame representing the combined virtual antenna spectrogram.
         """
-        torch_shifted = torch.stack([torch.from_numpy(df.values) for df in dfs])
-        torch_quantile = torch.nanquantile(torch_shifted, quantile, dim=0)
-
-        df = pd.DataFrame(torch_quantile, columns=dfs[0].columns, index=dfs[0].index)
+        if method == "quantile":
+            df = self._combine_quantile(dfs, quantile)
+        elif method == "loss":
+            df = self._combine_loss(dfs, epochs, ignore_ratio, grad_penalty_weight, lr)
+        else:
+            raise ValueError("Invalid method. Supported methods: 'quantile', 'loss'")
         df.attrs["FULLNAME"] = "VIRTUAL"
         return df
