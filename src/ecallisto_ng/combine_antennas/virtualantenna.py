@@ -8,12 +8,11 @@ from typing import List, Literal, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from ecallisto_ng.combine_antennas.combine import (
-    match_spectrograms,
-    preprocess_data,
-    sync_spectrograms,
-)
-from ecallisto_ng.combine_antennas.utils import round_frequencies_to_nearest_bin
+from ecallisto_ng.combine_antennas.combine import (match_spectrograms,
+                                                   preprocess_data,
+                                                   sync_spectrograms)
+from ecallisto_ng.combine_antennas.utils import \
+    round_frequencies_to_nearest_bin
 
 
 class EcallistoVirtualAntenna:

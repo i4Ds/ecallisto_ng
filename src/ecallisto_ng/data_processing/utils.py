@@ -4,6 +4,7 @@ import scipy.signal
 from scipy.ndimage import median_filter
 from skimage import filters
 
+
 def min_max_scale_per_column(data: pd.DataFrame) -> pd.DataFrame:
     """
     Apply min-max scaling to each column of a DataFrame.
@@ -20,8 +21,10 @@ def min_max_scale_per_column(data: pd.DataFrame) -> pd.DataFrame:
 
     # Apply min-max scaling per column
     scaled_data = (data - data.min()) / (data.max() - data.min())
-    
+
     return scaled_data
+
+
 def mean_filter(df, kernel_size=(5, 5)):
     """
     Apply mean filter to a DataFrame using a 2D convolution.

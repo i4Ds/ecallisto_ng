@@ -1,8 +1,9 @@
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.models as models
-from src.models.DefaultModel import DefaultBinaryModel
 from torchvision.models.efficientnet import efficientnet_v2_s
+
+from src.models.DefaultModel import DefaultBinaryModel
 
 
 class EfficientNetV2SBinaryClassifier(DefaultBinaryModel):
@@ -14,9 +15,13 @@ class EfficientNetV2SBinaryClassifier(DefaultBinaryModel):
         super().__init__(lr=lr, weight_decay=weight_decay)
 
         # EfficientNet V2 S Modell laden
-        self.efficientnet_v2_s = efficientnet_v2_s(weights=models.EfficientNet_V2_S_Weights.DEFAULT)
+        self.efficientnet_v2_s = efficientnet_v2_s(
+            weights=models.EfficientNet_V2_S_Weights.DEFAULT
+        )
         num_features = self.efficientnet_v2_s.classifier[1].in_features
-        self.efficientnet_v2_s.classifier = nn.Sequential(nn.Linear(num_features, 1), nn.Sigmoid())
+        self.efficientnet_v2_s.classifier = nn.Sequential(
+            nn.Linear(num_features, 1), nn.Sigmoid()
+        )
 
         # Layer einfrieren
         for param in self.efficientnet_v2_s.parameters():

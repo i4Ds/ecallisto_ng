@@ -13,13 +13,9 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from ecallisto_ng.data_download.utils import (
-    concat_dfs_by_instrument,
-    ecallisto_fits_to_pandas,
-    extract_datetime_from_filename,
-    extract_instrument_name,
-    filter_dataframes,
-    instrument_name_to_globbing_pattern,
-)
+    concat_dfs_by_instrument, ecallisto_fits_to_pandas,
+    extract_datetime_from_filename, extract_instrument_name, filter_dataframes,
+    instrument_name_to_globbing_pattern)
 
 BASE_URL = "http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto"
 LOCAL_PATH = "/mnt/nas05/data01/radio/2002-20yy_Callisto"

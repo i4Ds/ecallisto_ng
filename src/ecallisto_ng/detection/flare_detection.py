@@ -1,6 +1,7 @@
 import os
 import sys
 from collections import defaultdict
+from datetime import timedelta
 
 import matplotlib.pyplot as plt
 import mlflow
@@ -8,7 +9,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torchvision
-from datetime import timedelta
+
 import ecallisto_ng
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
 from ecallisto_ng.plotting.plotting import plot_spectogram_mpl
@@ -60,9 +61,7 @@ class FlareDetection:
             device = (
                 "cuda"
                 if torch.cuda.is_available()
-                else "mps"
-                if torch.backends.mps.is_available()
-                else "cpu"
+                else "mps" if torch.backends.mps.is_available() else "cpu"
             )
         self.device = device
         self.standard_cnn = standard_cnn
@@ -103,7 +102,12 @@ class FlareDetection:
         image = torch.tensor(image).float()
         return image
 
-    def detect(self, datetime, instrument="Australia-ASSA_62", window_length=timedelta(minutes=60)):
+    def detect(
+        self,
+        datetime,
+        instrument="Australia-ASSA_62",
+        window_length=timedelta(minutes=60),
+    ):
         """
         Detect flares in solar radio data for a given datetime, instrument, and window length.
 
@@ -134,13 +138,12 @@ class FlareDetection:
         end_time = datetime + window_length
         print(f"Detecting flares from {start_time} to {end_time} on {instrument}")
 
-
         # Get data for the specified time range and instrument
         data = get_ecallisto_data(start_time, end_time, instrument)
         if data == {}:
             print(f"No data found for {start_time} - {end_time} on {instrument}")
             return None
-        
+
         data = data[instrument]
         # Update start_time and end_time to the actual data range
         start_time = data.index.min()
@@ -152,7 +155,9 @@ class FlareDetection:
         n_predictions = 0
         while start_time + pd.to_timedelta("15min") <= end_time:
             data_temp = data.copy()
-            data_temp = data_temp.loc[start_time: start_time + pd.to_timedelta("15min")]
+            data_temp = data_temp.loc[
+                start_time : start_time + pd.to_timedelta("15min")
+            ]
             if data_temp.shape[0] == 0:
                 continue
 
@@ -161,7 +166,7 @@ class FlareDetection:
             data_temp = data_temp.unsqueeze(0)
             data_temp = torchvision.transforms.functional.resize(
                 data_temp, [224, 224], antialias=True
-                )
+            )
             img_tensor.append(data_temp)
             start_time = start_time + pd.to_timedelta("1min")
             n_predictions += 1

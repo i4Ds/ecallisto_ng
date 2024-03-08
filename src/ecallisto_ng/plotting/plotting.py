@@ -7,10 +7,8 @@ import plotly.io as pio
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
 from ecallisto_ng.data_fetching.get_data import NoDataAvailable
 from ecallisto_ng.plotting.utils import (
-    calculate_resample_freq,
-    return_strftime_based_on_range,
-    return_strftime_for_ticks_based_on_range,
-)
+    calculate_resample_freq, return_strftime_based_on_range,
+    return_strftime_for_ticks_based_on_range)
 
 
 def plot_spectogram_mpl(
@@ -23,9 +21,9 @@ def plot_spectogram_mpl(
     cmap="plasma",
     cross_to_plot=None,
     dot_to_plot=None,
-    cbar_label='Radio Flux', 
-    vmin=None, 
-    vmax=None
+    cbar_label="Radio Flux",
+    vmin=None,
+    vmax=None,
 ):
     # Create a new dataframe with rounded column names
     df = df.copy()
@@ -80,7 +78,7 @@ def plot_spectogram_mpl(
         cmap=current_cmap,
         interpolation="none",
         vmin=vmin,
-        vmax=vmax
+        vmax=vmax,
     )
 
     def find_nearest_idx(array, value):
@@ -121,7 +119,9 @@ def plot_spectogram_mpl(
         df.index[x_ticks].strftime(strf_format_ticks), rotation=0, ha="center"
     )
     # Title
-    title = f"{instrument_name} {title} | {sd_str} to {ed_str}" if title is not None else ""
+    title = (
+        f"{instrument_name} {title} | {sd_str} to {ed_str}" if title is not None else ""
+    )
     ax.set_title(title, fontsize=16)
     ax.set_xlabel("Time [UT]")
     ax.set_ylabel("Frequency [MHz]")
@@ -129,13 +129,13 @@ def plot_spectogram_mpl(
 
     if cross_to_plot is not None:
         for time, y in zip(cross_to_plot[0], cross_to_plot[1]):
-                # Convert time to the corresponding x-coordinate in the plot
-                x_pos = np.argmin(np.abs(df.index - time))
+            # Convert time to the corresponding x-coordinate in the plot
+            x_pos = np.argmin(np.abs(df.index - time))
 
-                # Assuming y is a frequency and needs to be mapped to the reversed y-axis
-                y_transformed = find_nearest_idx(df.columns.astype(float), y)
-                
-                ax.plot(x_pos, y_transformed, 'x', color='black')  # Adding crosses
+            # Assuming y is a frequency and needs to be mapped to the reversed y-axis
+            y_transformed = find_nearest_idx(df.columns.astype(float), y)
+
+            ax.plot(x_pos, y_transformed, "x", color="black")  # Adding crosses
 
     if dot_to_plot is not None:
         for time, y in zip(dot_to_plot[0], dot_to_plot[1]):
@@ -144,8 +144,8 @@ def plot_spectogram_mpl(
 
             # Assuming y is a frequency and needs to be mapped to the reversed y-axis
             y_transformed = find_nearest_idx(df.columns.astype(float), y)
-            
-            ax.plot(x_pos, y_transformed, '+', color='blue')  # Adding crosses
+
+            ax.plot(x_pos, y_transformed, "+", color="blue")  # Adding crosses
     # Adding colorbar
     cbar = fig.colorbar(cax)
     cbar.set_label(cbar_label)

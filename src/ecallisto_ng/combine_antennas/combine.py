@@ -2,20 +2,13 @@ import numpy as np
 import torch
 
 from ecallisto_ng.combine_antennas.utils import (
-    align_to_reference,
-    get_cross_corr_matrix,
-    make_frequencies_match_spectograms,
-    make_times_match_spectograms,
-    shift_spectrograms,
-)
+    align_to_reference, get_cross_corr_matrix,
+    make_frequencies_match_spectograms, make_times_match_spectograms,
+    shift_spectrograms)
 from ecallisto_ng.data_processing.utils import (
-    apply_median_filter,
-    intensity_to_linear,
-    min_max_scale_per_column,
-    mean_filter,
-    subtract_constant_background,
-    subtract_low_signal_noise_background,
-)
+    apply_median_filter, intensity_to_linear, mean_filter,
+    min_max_scale_per_column, subtract_constant_background,
+    subtract_low_signal_noise_background)
 
 
 def match_spectrograms(datas):
@@ -97,7 +90,7 @@ def preprocess_data(
     min_n_frequencies,
     freq_range,
     filter_type,
-    filter_size, 
+    filter_size,
     subtract_background,
     resample_func="MEAN",
 ):

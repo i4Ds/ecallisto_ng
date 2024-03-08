@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.models as models
 from torchvision.models import vit_b_16
+
 from src.models.DefaultModel import DefaultBinaryModel
 
 
@@ -21,7 +22,10 @@ class ViTB16BinaryClassifier(DefaultBinaryModel):
             param.requires_grad = False
 
         # Die letzten Encoder-Layer unfreezen
-        for layer in [self.vit_b_16.encoder.layers.encoder_layer_10, self.vit_b_16.encoder.layers.encoder_layer_11]:
+        for layer in [
+            self.vit_b_16.encoder.layers.encoder_layer_10,
+            self.vit_b_16.encoder.layers.encoder_layer_11,
+        ]:
             for param in layer.parameters():
                 param.requires_grad = True
 

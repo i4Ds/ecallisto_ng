@@ -1,9 +1,7 @@
 from datetime import datetime
 
 from ecallisto_ng.data_download.downloader import (
-    get_ecallisto_data_generator,
-    get_instrument_with_available_data,
-)
+    get_ecallisto_data_generator, get_instrument_with_available_data)
 
 
 def test_get_avail_instruments():
