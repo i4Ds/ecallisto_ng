@@ -8,11 +8,12 @@ from typing import List, Literal, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from ecallisto_ng.combine_antennas.combine import (match_spectrograms,
-                                                   preprocess_data,
-                                                   sync_spectrograms)
-from ecallisto_ng.combine_antennas.utils import \
-    round_frequencies_to_nearest_bin
+from ecallisto_ng.combine_antennas.combine import (
+    match_spectrograms,
+    preprocess_data,
+    sync_spectrograms,
+)
+from ecallisto_ng.combine_antennas.utils import round_frequencies_to_nearest_bin
 
 
 class EcallistoVirtualAntenna:
@@ -55,6 +56,7 @@ class EcallistoVirtualAntenna:
     def __init__(
         self,
         min_n_frequencies: int = 30,
+        resample_time_delta: pd.Timedelta = pd.Timedelta(250, unit="ms"),
         freq_range: Optional[Tuple[int, int]] = [-np.inf, np.inf],
         subtract_background: bool = True,
         filter_type: Optional[Literal["median", "mean"]] = "median",
@@ -63,6 +65,7 @@ class EcallistoVirtualAntenna:
     ):
         self.min_n_frequencies = min_n_frequencies
         self.freq_range = freq_range
+        self.resample_time_delta = resample_time_delta
         self.subtract_background = subtract_background
         self.filter_type = filter_type
         self.filter_size = filter_size
@@ -73,6 +76,7 @@ class EcallistoVirtualAntenna:
         data_processed = preprocess_data(
             dfs,
             db_space=self.db_space,
+            resample_time_delta=self.resample_time_delta,
             min_n_frequencies=self.min_n_frequencies,
             subtract_background=self.subtract_background,
             filter_type=self.filter_type,
@@ -141,7 +145,7 @@ class EcallistoVirtualAntenna:
                 [torch.nanmean(torch.abs(t - noise_tensor)) for t in tensor_list]
             )
 
-            # Determine the threshold to ignore the top 10% dataframes
+            # Determine the threshold to ignore the top x% dataframes
             threshold = torch.quantile(losses, 1 - ignore_ratio)
 
             # Compute masked losses, ignoring dataframes with losses above the threshold

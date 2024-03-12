@@ -7,8 +7,10 @@ import plotly.io as pio
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
 from ecallisto_ng.data_fetching.get_data import NoDataAvailable
 from ecallisto_ng.plotting.utils import (
-    calculate_resample_freq, return_strftime_based_on_range,
-    return_strftime_for_ticks_based_on_range)
+    downcast_resolution,
+    return_strftime_based_on_range,
+    return_strftime_for_ticks_based_on_range,
+)
 
 
 def plot_spectogram_mpl(
@@ -196,18 +198,9 @@ def plot_spectogram(
 
     # If resolution is provided, resample the dataframe
     if resolution is not None:
-        resample_freq = calculate_resample_freq(
-            start_datetime, end_datetime, resolution
+        df = downcast_resolution(
+            df, start_datetime, end_datetime, resolution, samplig_method
         )
-        resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
-
-        # Resample data
-        if samplig_method == "mean":
-            df = df.resample(resample_freq).mean()
-        elif samplig_method == "max":
-            df = df.resample(resample_freq).max()
-        elif samplig_method == "min":
-            df = df.resample(resample_freq).min()
 
     fig = px.imshow(
         df.T,

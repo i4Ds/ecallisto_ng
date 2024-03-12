@@ -2,6 +2,28 @@ import numpy as np
 import pandas as pd
 
 
+def downcast_resolution(df, start_datetime, end_datetime, resolution, sampling_method):
+    # Calculate resampling frequency
+    resample_freq = calculate_resample_freq(start_datetime, end_datetime, resolution)
+    resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
+    # Resample data
+    df = downcast_timedelta(df, resample_freq, sampling_method)
+
+    return df
+
+
+def downcast_timedelta(df, resample_timedelta, sampling_method):
+    # Resample data
+    if sampling_method.lower() == "mean":
+        df = df.resample(resample_timedelta).mean()
+    elif sampling_method.lower() == "max":
+        df = df.resample(resample_timedelta).max()
+    elif sampling_method.lower() == "min":
+        df = df.resample(resample_timedelta).min()
+
+    return df
+
+
 def calculate_resample_freq(start_datetime, end_datetime, resolution):
     tota_time_delta = end_datetime - start_datetime
     return tota_time_delta / (resolution - 1)

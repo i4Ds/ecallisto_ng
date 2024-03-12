@@ -2,13 +2,21 @@ import numpy as np
 import torch
 
 from ecallisto_ng.combine_antennas.utils import (
-    align_to_reference, get_cross_corr_matrix,
-    make_frequencies_match_spectograms, make_times_match_spectograms,
-    shift_spectrograms)
+    align_to_reference,
+    get_cross_corr_matrix,
+    make_frequencies_match_spectograms,
+    make_times_match_spectograms,
+    shift_spectrograms,
+)
 from ecallisto_ng.data_processing.utils import (
-    apply_median_filter, intensity_to_linear, mean_filter,
-    min_max_scale_per_column, subtract_constant_background,
-    subtract_low_signal_noise_background)
+    apply_median_filter,
+    intensity_to_linear,
+    mean_filter,
+    min_max_scale_per_column,
+    subtract_constant_background,
+    subtract_low_signal_noise_background,
+)
+from ecallisto_ng.plotting.utils import downcast_timedelta
 
 
 def match_spectrograms(datas):
@@ -87,6 +95,7 @@ def sync_spectrograms(dfs, shifts=None, method="maximize_cross_correlation"):
 def preprocess_data(
     datas,
     db_space,
+    resample_time_delta,
     min_n_frequencies,
     freq_range,
     filter_type,
@@ -124,19 +133,12 @@ def preprocess_data(
         data = data.loc[:, (columns > freq_range[0]) & (columns < freq_range[1])]
 
         # Resample data
-        if resample_func == "MAX":
-            data = data.resample("250ms").max()
-        elif resample_func == "MIN":
-            data = data.resample("250ms").min()
-        elif resample_func == "MEAN":
-            data = data.resample("250ms").mean()
-        else:
-            raise ValueError("Unsupported resampling function")
+        data = downcast_timedelta(data, resample_time_delta, resample_func)
 
         # Check column conditions
         if len(data.columns) < min_n_frequencies:
             print(
-                f"Skipping {data.attrs['FULLNAME']} it has only {len(data.columns)} / {min_n_frequencies} frequencies"
+                f"Skipping {data.attrs['FULLNAME']} it has only has {len(data.columns)} out of {min_n_frequencies} frequencies"
             )
             continue
 
