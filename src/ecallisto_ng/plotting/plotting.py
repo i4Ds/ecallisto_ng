@@ -10,6 +10,7 @@ from ecallisto_ng.plotting.utils import (
     downcast_resolution,
     return_strftime_based_on_range,
     return_strftime_for_ticks_based_on_range,
+    calculate_resample_freq,
 )
 
 
@@ -137,7 +138,7 @@ def plot_spectogram_mpl(
             # Assuming y is a frequency and needs to be mapped to the reversed y-axis
             y_transformed = find_nearest_idx(df.columns.astype(float), y)
 
-            ax.plot(x_pos, y_transformed, "x", color="black")  # Adding crosses
+            ax.plot(x_pos, y_transformed, "x", color="gray")  # Adding crosses
 
     if dot_to_plot is not None:
         for time, y in zip(dot_to_plot[0], dot_to_plot[1]):
