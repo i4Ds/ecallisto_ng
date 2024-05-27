@@ -149,8 +149,9 @@ class EcallistoVirtualAntenna:
             threshold = torch.quantile(losses, 1 - ignore_ratio)
 
             # Compute masked losses, ignoring dataframes with losses above the threshold
+            mask = losses <= threshold
             masked_losses = torch.where(
-                losses > threshold, torch.tensor(0.0, device=losses.device), losses
+                mask, losses, torch.tensor(0.0, device=losses.device)
             )
             mae_loss = torch.mean(masked_losses)
 
@@ -170,8 +171,15 @@ class EcallistoVirtualAntenna:
             if epoch % 10 == 0:
                 print(f"Epoch {epoch}, Loss: {mae_loss.item()}")
 
+        # Use only the non-ignored dataframes for the final combination
+        optimized_tensor_list = [
+            tensor for tensor, m in zip(tensor_list, mask) if m
+        ]
+        optimized_tensor_stack = torch.stack(optimized_tensor_list)
+        optimized_noise_tensor = torch.mean(optimized_tensor_stack, dim=0)
+
         optimized_noise_df = pd.DataFrame(
-            noise_tensor.detach().numpy(), index=dfs[0].index, columns=dfs[0].columns
+            optimized_noise_tensor.detach().numpy(), index=dfs[0].index, columns=dfs[0].columns
         )
 
         return optimized_noise_df
