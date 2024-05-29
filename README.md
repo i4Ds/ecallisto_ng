@@ -68,12 +68,12 @@ from ecallisto_ng.data_download.downloader import (
 )
 from datetime import datetime
 
-start = datetime(2021, 3, 1, 6, 30, 0)
-end = datetime(2021, 3, 7, 23, 30, 0)
+start = datetime(2021, 5, 7, 0, 00, 0)
+end = datetime(2021, 5, 7, 23, 59, 0)
 instrument_name = "Australia-ASSA_01"
 
 dfs = get_ecallisto_data(start, end, instrument_name)
-df = dfs[instrument_name]
+df = dfs[instrument_name] # Returns a dict of pd.Dataframes because instrument_name can also be a substring, e.g. "ASSA".
 ```
 # Getting data via a generator
 ## `get_ecallisto_data_generator` Function
@@ -98,17 +98,17 @@ from ecallisto_ng.data_download.downloader import (
 )
 from datetime import datetime
 
-start_datetime = datetime(2021, 5, 7, 0, 00, 0)
-end_datetime = datetime(2021, 5, 7, 23, 59, 0)
-instrument_name = ["Australia-ASSA_01", <other instrument>]
+start = datetime(2021, 5, 7, 0, 00, 0)
+end = datetime(2021, 5, 7, 23, 59, 0)
+instrument_name = ["Australia-ASSA_01", "Australia-ASSA_02"]
 
 data_generator = get_ecallisto_data_generator(start, end, instrument_name)
 for instrument_name, data_frame in data_generator:
-    process_data(instrument_name, data_frame)  # Replace with your processing function
-
+    print(instrument_name)
+    print(f"{df.shape=}")
 ```
 ## Plotting 
-Ecallisto NG provides basic plotting capabilities. Here's an example of how to generate a spectogram:
+Ecallisto NG provides basic plotting capabilities. Here's an example of how to generate a spectogram (make sure that df is defined):
 ```python
 from ecallisto_ng.plotting.plotting import plot_spectogram
 
@@ -121,23 +121,25 @@ plot_spectogram(df, resolution=720) # Pixels
 ```
 For more documentation on resample, please refer to the [Pandas documentation](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html).
 ## Spectogram editing
-We also provide some basic functionalities to edit the spectogram. Here's how you can do it:
+We also provide some basic functionalities to edit the spectogram. Here's how you can do it (make sure that df is defined):
 ```python
-from ecallisto_ng.data_processing.utils import elimwrongchannels, subtract_constant_background, subtract_rolling_background
+from ecallisto_ng.data_processing.utils import elimwrongchannels, subtract_constant_background, subtract_low_signal_noise_background
 from datetime import datetime
-
-df = elimwrongchannels(df)
-df = fill_missing_timesteps_with_nan(df)
-df = subtract_constant_background(df)
-df = subtract_rolling_background(df)
+from ecallisto_ng.plotting.plotting import plot_spectogram
 
 # Filter keep frequencies only between 40 and 70 MHz
-df = df.loc[:, 40:70]
+df = df.loc[:, 20:80]
 
-# Filter time between two dates
+# Select specific time
 start = datetime(2021, 5, 7, 3, 39, 0)
 end = datetime(2021, 5, 7, 3, 42, 0)
 df = df.loc[start:end]
+
+# Edit data
+df = elimwrongchannels(df)
+df = subtract_low_signal_noise_background(df)
+df = subtract_constant_background(df)
+
 plot_spectogram(df)
 ```
 ## Additional Information
