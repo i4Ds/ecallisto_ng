@@ -63,14 +63,17 @@ This function fetches e-Callisto data within a specified date range and optional
 
 ## Example
 ```python
-from ecallisto_ng.data_fetching import get_ecallisto_data
+from ecallisto_ng.data_download.downloader import (
+    get_ecallisto_data,
+)
 from datetime import datetime
 
 start = datetime(2021, 3, 1, 6, 30, 0)
 end = datetime(2021, 3, 7, 23, 30, 0)
-instrument_name = "austria_unigraz_01"
+instrument_name = "Australia-ASSA_01"
 
-df = get_ecallisto_data(start, end, instrument_name)
+dfs = get_ecallisto_data(start, end, instrument_name)
+df = dfs[instrument_name]
 ```
 # Getting data via a generator
 ## `get_ecallisto_data_generator` Function
@@ -90,12 +93,14 @@ A generator function that yields e-Callisto data one file at a time within a dat
 
 ## Example
 ```python
-from ecallisto_ng.data_fetching import get_ecallisto_data_generator
+from ecallisto_ng.data_download.downloader import (
+    get_ecallisto_data_generator,
+)
 from datetime import datetime
 
-start = datetime(2021, 3, 1, 6, 30, 0)
-end = datetime(2021, 3, 7, 23, 30, 0)
-instrument_name = ["austria_unigraz_01", "another_instrument"]
+start_datetime = datetime(2021, 5, 7, 0, 00, 0)
+end_datetime = datetime(2021, 5, 7, 23, 59, 0)
+instrument_name = ["Australia-ASSA_01", <other instrument>]
 
 data_generator = get_ecallisto_data_generator(start, end, instrument_name)
 for instrument_name, data_frame in data_generator:
@@ -105,20 +110,21 @@ for instrument_name, data_frame in data_generator:
 ## Plotting 
 Ecallisto NG provides basic plotting capabilities. Here's an example of how to generate a spectogram:
 ```python
-from ecallisto_ng.plotting.utils import plot_spectogram
+from ecallisto_ng.plotting.plotting import plot_spectogram
 
 plot_spectogram(df)
 ```
 Make use of .resample to reduce the size of the data. Alternatively, you can pass a `resolution` parameter to the plot_spectogram. Here's an example:
 ```python
 plot_spectogram(df.resample("1min").max())
-plot_spectogram(df, resolution="1min")
+plot_spectogram(df, resolution=720) # Pixels
 ```
 For more documentation on resample, please refer to the [Pandas documentation](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html).
 ## Spectogram editing
 We also provide some basic functionalities to edit the spectogram. Here's how you can do it:
 ```python
 from ecallisto_ng.data_processing.utils import elimwrongchannels, subtract_constant_background, subtract_rolling_background
+from datetime import datetime
 
 df = elimwrongchannels(df)
 df = fill_missing_timesteps_with_nan(df)
@@ -128,6 +134,10 @@ df = subtract_rolling_background(df)
 # Filter keep frequencies only between 40 and 70 MHz
 df = df.loc[:, 40:70]
 
+# Filter time between two dates
+start = datetime(2021, 5, 7, 3, 39, 0)
+end = datetime(2021, 5, 7, 3, 42, 0)
+df = df.loc[start:end]
 plot_spectogram(df)
 ```
 ## Additional Information
