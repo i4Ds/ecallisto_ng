@@ -34,6 +34,12 @@ ml = ['mlflow', 'torch', 'torchvision', 'torchmetrics', 'pytorch-lightning']
 va = ['torch']
 all = ['nbformat', 'ipython', 'ipykernel', 'black', 'isort', 'twine', 'build', 'pytest', 'mlflow', 'torch', 'torchvision', 'torchmetrics', 'pytorch-lightning']
 
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests"
+]
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
