@@ -3,6 +3,7 @@ import pandas as pd
 import scipy.signal
 from scipy.ndimage import median_filter
 from skimage import filters
+from scipy.ndimage import generic_filter
 
 
 def min_max_scale_per_column(data: pd.DataFrame) -> pd.DataFrame:
@@ -23,6 +24,33 @@ def min_max_scale_per_column(data: pd.DataFrame) -> pd.DataFrame:
     scaled_data = (data - data.min()) / (data.max() - data.min())
 
     return scaled_data
+
+
+def apply_quantile_filter(df, quantile_value, size=(3, 3)):
+    """
+    Apply quantile filter to a DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame to filter.
+    quantile_value : float
+        Quantile value to use for filtering (between 0 and 1).
+    size : tuple of int, optional
+        Dimensions of the filter kernel. Default is (3, 3).
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered DataFrame.
+    """
+
+    def quantile_func(values):
+        return np.quantile(values, quantile_value)
+
+    data = generic_filter(df.values, quantile_func, size=size, mode="reflect")
+    df.values[:] = data
+    return df
 
 
 def mean_filter(df, kernel_size=(5, 5)):

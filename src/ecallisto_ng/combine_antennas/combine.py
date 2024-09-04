@@ -10,6 +10,7 @@ from ecallisto_ng.combine_antennas.utils import (
 )
 from ecallisto_ng.data_processing.utils import (
     apply_median_filter,
+    apply_quantile_filter,
     intensity_to_linear,
     mean_filter,
     min_max_scale_per_column,
@@ -100,8 +101,9 @@ def preprocess_data(
     freq_range,
     filter_type,
     filter_size,
+    filter_quantile_value,
     subtract_background,
-    resample_func="MEAN",
+    resample_func="mean",
 ):
     """
     Process a list of DataFrames based on a series of filtering and transformation steps.
@@ -118,6 +120,8 @@ def preprocess_data(
         Type of filter to apply ('median' or 'mean'). Default is None.
     filter_size: tuple(int, int)
         Size of filter in pixel.
+    filter_quantile_value: float
+        Quantile value to use for filtering.
     resample_func : str, optional
         Resampling function to use. Default is 'MEAN'.
 
@@ -154,6 +158,8 @@ def preprocess_data(
             data = apply_median_filter(data, filter_size)
         if filter_type == "mean":
             data = mean_filter(data, filter_size)
+        if filter_type == "quantile":
+            data = apply_quantile_filter(data, filter_quantile_value)
 
         # Min max scale data per frequency
         data = min_max_scale_per_column(data)

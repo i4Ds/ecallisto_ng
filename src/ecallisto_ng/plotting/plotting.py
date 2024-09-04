@@ -25,6 +25,7 @@ def plot_spectogram_mpl(
     cross_to_plot=None,
     dot_to_plot=None,
     cbar_label="Radio Flux",
+    colorbar=True,
     vmin=None,
     vmax=None,
 ):
@@ -150,8 +151,9 @@ def plot_spectogram_mpl(
 
             ax.plot(x_pos, y_transformed, "+", color="blue")  # Adding crosses
     # Adding colorbar
-    cbar = fig.colorbar(cax)
-    cbar.set_label(cbar_label)
+    if colorbar:
+        cbar = fig.colorbar(cax)
+        cbar.set_label(cbar_label)
 
     fig.tight_layout()
     return fig
