@@ -59,7 +59,8 @@ class EcallistoVirtualAntenna:
         resample_time_delta: pd.Timedelta = pd.Timedelta(250, unit="ms"),
         freq_range: Optional[Tuple[int, int]] = [-np.inf, np.inf],
         subtract_background: bool = True,
-        filter_type: Optional[Literal["median", "mean"]] = "median",
+        filter_type: Optional[Literal["median", "mean", "quantile"]] = "median",
+        filter_quantile_value: float = 0.5,  # TODO
         filter_size: Tuple[int, int] = (12, 12),
         db_space: bool = True,
     ):
@@ -69,6 +70,7 @@ class EcallistoVirtualAntenna:
         self.subtract_background = subtract_background
         self.filter_type = filter_type
         self.filter_size = filter_size
+        self.filter_quantile_value = filter_quantile_value
         self.db_space = db_space
         self.data = None
 
@@ -81,6 +83,7 @@ class EcallistoVirtualAntenna:
             subtract_background=self.subtract_background,
             filter_type=self.filter_type,
             filter_size=self.filter_size,
+            filter_quantile_value=self.filter_quantile_value,
             freq_range=self.freq_range,
         )
         return data_processed
@@ -172,14 +175,14 @@ class EcallistoVirtualAntenna:
                 print(f"Epoch {epoch}, Loss: {mae_loss.item()}")
 
         # Use only the non-ignored dataframes for the final combination
-        optimized_tensor_list = [
-            tensor for tensor, m in zip(tensor_list, mask) if m
-        ]
+        optimized_tensor_list = [tensor for tensor, m in zip(tensor_list, mask) if m]
         optimized_tensor_stack = torch.stack(optimized_tensor_list)
         optimized_noise_tensor = torch.mean(optimized_tensor_stack, dim=0)
 
         optimized_noise_df = pd.DataFrame(
-            optimized_noise_tensor.detach().numpy(), index=dfs[0].index, columns=dfs[0].columns
+            optimized_noise_tensor.detach().numpy(),
+            index=dfs[0].index,
+            columns=dfs[0].columns,
         )
 
         return optimized_noise_df
