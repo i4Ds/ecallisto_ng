@@ -13,7 +13,7 @@ def test_single_plot_spectrogram(assa01_dataframe):
     # Check the layout
     layout = fig.layout
     assert "Australia-ASSA_01" in layout.title.text
-    assert layout.xaxis.title.text == "Datetime [UT]"
+    assert layout.xaxis.title.text == "Time [UT]"
     assert layout.yaxis.title.text == "Frequency [MHz]"
 
     # Check the data
@@ -37,7 +37,7 @@ def test_fixed_resolution_plot_spectrogram():
 
     assert len(fig.axes) == 2
     ax = fig.axes[0]
-    assert ax.get_xlabel() == "Datetime [UT]"
+    assert ax.get_xlabel() == "Time [UT]"
     assert ax.get_ylabel() == "Frequency [MHz]"
     assert instru in ax.get_title()
     imshow_obj = ax.images[0]
