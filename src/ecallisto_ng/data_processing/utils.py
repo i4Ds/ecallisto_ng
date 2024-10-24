@@ -4,6 +4,10 @@ import scipy.signal
 from scipy.ndimage import median_filter
 from skimage import filters
 
+def calculate_snr(data: pd.DataFrame, window: int =  5) -> np.float_:
+    data = subtract_rolling_background(data, window)
+    data = data.dropna(axis=0)
+    return np.round(np.mean(data) / np.std(data), 3)
 
 def min_max_scale_per_column(data: pd.DataFrame) -> pd.DataFrame:
     """
@@ -223,7 +227,7 @@ def subtract_rolling_background(
     center : bool, default False
         If True, the rolling window is centered on the current timepoint. If False, the rolling window starts at the current timepoint.
         See pandas.DataFrame.rolling for more details.
-    how : str, default "median"
+    how : str, default "quantile"
         Method to calculate the rolling background. If "median", the median value of the window is used.
         If "quantile", the quantile defined by `quantile_value` is used.
     quantile_value : float, default 0.5
