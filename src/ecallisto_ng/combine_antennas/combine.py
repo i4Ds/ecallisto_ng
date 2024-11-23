@@ -4,8 +4,8 @@ import torch
 from ecallisto_ng.combine_antennas.utils import (
     align_to_reference,
     get_cross_corr_matrix,
-    make_frequencies_match_spectograms,
-    make_times_match_spectograms,
+    make_frequencies_match_spectrograms,
+    make_times_match_spectrograms,
     shift_spectrograms,
 )
 from ecallisto_ng.data_processing.utils import (
@@ -37,8 +37,8 @@ def match_spectrograms(datas):
     list of pd.DataFrame
         List of matched spectrogram DataFrames.
     """
-    data_processed = make_times_match_spectograms(datas)
-    data_processed = make_frequencies_match_spectograms(data_processed)
+    data_processed = make_times_match_spectrograms(datas)
+    data_processed = make_frequencies_match_spectrograms(data_processed)
     return data_processed
 
 

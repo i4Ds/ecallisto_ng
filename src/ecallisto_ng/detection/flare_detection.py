@@ -12,7 +12,7 @@ import torchvision
 
 import ecallisto_ng
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
-from ecallisto_ng.plotting.plotting import plot_spectogram_mpl
+from ecallisto_ng.plotting.plotting import plot_spectrogram_mpl
 
 
 class FlareDetection:
@@ -191,7 +191,7 @@ class FlareDetection:
         minute_by_minute = {k: sum(v) / len(v) for k, v in minute_by_minute.items()}
 
         # Plot the data
-        fig = plot_spectogram_mpl(data, fig_size=(12, 6))
+        fig = plot_spectrogram_mpl(data, fig_size=(12, 6))
 
         # Get the current axis
         ax1 = fig.gca()

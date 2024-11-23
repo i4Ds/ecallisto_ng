@@ -14,7 +14,7 @@ from ecallisto_ng.plotting.utils import (
 )
 
 
-def plot_spectogram_mpl(
+def plot_spectrogram_mpl(
     df,
     instrument_name=None,
     start_datetime=None,
@@ -159,7 +159,7 @@ def plot_spectogram_mpl(
     return fig
 
 
-def plot_spectogram(
+def plot_spectrogram(
     df,
     instrument_name=None,
     start_datetime=None,
@@ -293,6 +293,6 @@ def plot_with_fixed_resolution_mpl(
             df = df.resample(resample_freq).min()
 
     # Plot
-    return plot_spectogram_mpl(
+    return plot_spectrogram_mpl(
         df, instrument, start_datetime, end_datetime, fig_size=fig_size
     )

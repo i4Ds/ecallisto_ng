@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from ecallisto_ng.plotting.utils import fill_missing_timesteps_with_nan
 
 
-def make_times_match_spectograms(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
+def make_times_match_spectrograms(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
     """
     Adjusts the time index of the given list of DataFrames to have the same start and end times.
 
@@ -56,7 +56,7 @@ def interpolate_columns(df: pd.DataFrame, all_columns: List[float]) -> pd.DataFr
     return df
 
 
-def make_frequencies_match_spectograms(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
+def make_frequencies_match_spectrograms(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
     """
     Makes frequency columns across multiple spectrogram DataFrames consistent.
 

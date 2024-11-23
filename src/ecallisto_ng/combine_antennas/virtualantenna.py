@@ -117,15 +117,15 @@ class EcallistoVirtualAntenna:
             print(
                 f"Warning! Rebinning is very unstable. When a bin contains any NANs, the whole bin will be NAN."
             )
-        print(f"Combining {len(dfs)} spectograms.")
+        print(f"Combining {len(dfs)} spectrograms.")
         data_processed = self._preprocess(dfs)
         print(f"Binning the frequencies with a bin width of {bin_width}.")
         data_binned = round_frequencies_to_nearest_bin(
             data_processed, bin_width, method=method
         )
-        print("Matching and syncing the spectograms.")
+        print("Matching and syncing the spectrograms.")
         synced_data, ref_idx = self._sync_and_match(data_binned)
-        print(f"Reference spectogram is {dfs[ref_idx].attrs['INSTRUME']}.")
+        print(f"Reference spectrogram is {dfs[ref_idx].attrs['INSTRUME']}.")
         return synced_data, ref_idx
 
     @staticmethod

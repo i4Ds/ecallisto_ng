@@ -3,12 +3,12 @@ from datetime import datetime
 import numpy as np
 
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
-from ecallisto_ng.plotting.plotting import (plot_spectogram,
+from ecallisto_ng.plotting.plotting import (plot_spectrogram,
                                             plot_with_fixed_resolution_mpl)
 
 
 def test_single_plot_spectrogram(assa01_dataframe):
-    fig = plot_spectogram(assa01_dataframe)
+    fig = plot_spectrogram(assa01_dataframe)
 
     # Check the layout
     layout = fig.layout
@@ -23,7 +23,7 @@ def test_single_plot_spectrogram(assa01_dataframe):
 
 
 def test_mult_plot_spectrogram(assa_dataframes):
-    plot_spectogram(assa_dataframes)
+    plot_spectrogram(assa_dataframes)
 
 
 def test_fixed_resolution_plot_spectrogram():

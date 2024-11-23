@@ -283,9 +283,9 @@ def concat_dfs_by_instrument(dfs, verbose=False):
     return instruments
 
 
-def masked_spectogram_to_array(data, freq_axis):
+def masked_spectrogram_to_array(data, freq_axis):
     """
-    Converts a masked spectogram to an array by removing all masked values.
+    Converts a masked spectrogram to an array by removing all masked values.
     """
     # Get row with no masked values
     idxs = np.where(~np.any(np.ma.getmaskarray(data), axis=1))[0]
@@ -327,7 +327,7 @@ def ecallisto_fits_to_pandas(fits_file):
     data = np.array(fits_file[0].data, dtype=np.uint8)
 
     # Remove masked values
-    data, freq_axis = masked_spectogram_to_array(data, freq_axis)
+    data, freq_axis = masked_spectrogram_to_array(data, freq_axis)
 
     if not len(np.unique(freq_axis)) == len(freq_axis):
         freq_axis, data = combine_non_unique_frequency_axis(freq_axis, data)

@@ -1,5 +1,5 @@
 # Ecallisto NG 
-Ecallisto NG is a comprehensive Python package tailored for interacting with Ecallisto data. It focuses on facilitating efficient data manipulation, processing, and visualization, leveraging the power of Pandas for data handling and PyTorch for advanced computations. The package is particularly optimized for dealing with large datasets, providing tools for slicing, filtering, and resampling data to make spectogram plotting more manageable.
+Ecallisto NG is a comprehensive Python package tailored for interacting with Ecallisto data. It focuses on facilitating efficient data manipulation, processing, and visualization, leveraging the power of Pandas for data handling and PyTorch for advanced computations. The package is particularly optimized for dealing with large datasets, providing tools for slicing, filtering, and resampling data to make spectrogram plotting more manageable.
 
 ## Table of Contents
 - [Background](#background)
@@ -12,7 +12,7 @@ Ecallisto NG is a comprehensive Python package tailored for interacting with Eca
   - [Data Fetching](#data-fetching-deprecated)
   - [Data Processing and Visualization](#data-processing-and-visualization)
   - [Plotting](#plotting)
-  - [Spectogram Editing](#spectogram-editing)
+  - [spectrogram Editing](#spectrogram-editing)
 - [Additional Information](#additional-information)
   - [Note on .attrs and FITS Header](#note-on-attrs-and-fits-header)
   - [Contributing](#contributing)
@@ -108,24 +108,24 @@ for instrument_name, data_frame in data_generator:
     print(f"{df.shape=}")
 ```
 ## Plotting 
-Ecallisto NG provides basic plotting capabilities. Here's an example of how to generate a spectogram (make sure that df is defined):
+Ecallisto NG provides basic plotting capabilities. Here's an example of how to generate a spectrogram (make sure that df is defined):
 ```python
-from ecallisto_ng.plotting.plotting import plot_spectogram
+from ecallisto_ng.plotting.plotting import plot_spectrogram
 
-plot_spectogram(df)
+plot_spectrogram(df)
 ```
-Make use of .resample to reduce the size of the data. Alternatively, you can pass a `resolution` parameter to the plot_spectogram. Here's an example:
+Make use of .resample to reduce the size of the data. Alternatively, you can pass a `resolution` parameter to the plot_spectrogram. Here's an example:
 ```python
-plot_spectogram(df.resample("1min").max())
-plot_spectogram(df, resolution=720) # Pixels
+plot_spectrogram(df.resample("1min").max())
+plot_spectrogram(df, resolution=720) # Pixels
 ```
 For more documentation on resample, please refer to the [Pandas documentation](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html).
-## Spectogram editing
-We also provide some basic functionalities to edit the spectogram. Here's how you can do it (make sure that df is defined):
+## spectrogram editing
+We also provide some basic functionalities to edit the spectrogram. Here's how you can do it (make sure that df is defined):
 ```python
 from ecallisto_ng.data_processing.utils import elimwrongchannels, subtract_constant_background, subtract_low_signal_noise_background
 from datetime import datetime
-from ecallisto_ng.plotting.plotting import plot_spectogram
+from ecallisto_ng.plotting.plotting import plot_spectrogram
 
 # Filter keep frequencies only between 40 and 70 MHz
 df = df.loc[:, 20:80]
@@ -140,7 +140,7 @@ df = elimwrongchannels(df)
 df = subtract_low_signal_noise_background(df)
 df = subtract_constant_background(df)
 
-plot_spectogram(df)
+plot_spectrogram(df)
 ```
 ## Additional Information
 ### Note on .attrs and FITS Header
@@ -150,7 +150,7 @@ The function utilizes DataFrames with the .attrs attribute to store FITS header 
 print(df.attrs)
 ```
 
-These simple commands allow you to easily manipulate spectogram data, enabling effective use of the Ecallisto API for your needs.
+These simple commands allow you to easily manipulate spectrogram data, enabling effective use of the Ecallisto API for your needs.
 
 ### Contributing
 Contributions to Ecallisto NG are very welcome! If you have an idea for an improvement or have found a bug, please feel free to contribute. The preferred way to contribute is by submitting a Pull Request (PR) or creating an issue on our GitHub repository. This way, we can discuss potential changes or fixes and maintain the quality of the project.
