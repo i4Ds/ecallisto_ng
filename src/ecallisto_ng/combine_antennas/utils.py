@@ -2,8 +2,6 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-import torch
-import torch.nn.functional as F
 
 from ecallisto_ng.plotting.utils import fill_missing_timesteps_with_nan
 

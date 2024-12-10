@@ -1,6 +1,6 @@
 [project]
 name = "ecallisto_ng"
-version = "0.8.1"
+version = "1.0.0"
 authors = [{name = "Vincenzo Timmel", email = "vincenzo.timmel@fhnw.ch"}]
 description = "A Python package for the fetching (and some processing and plotting) of eCallisto data based on request and pandas."
 readme = "README.md"
@@ -13,7 +13,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    'numpy>=1.21.6',
+    'numpy>=2.0.0',
     'pandas>=2.0.0',
     'openpyxl',
     'plotly',
@@ -30,9 +30,8 @@ dependencies = [
 [project.optional-dependencies]
 nb = ['nbformat', 'ipython', 'ipykernel']
 dev = ['black', 'isort', 'twine', 'build', 'pytest']
-ml = ['mlflow', 'torch', 'torchvision', 'torchmetrics', 'pytorch-lightning']
 va = ['torch']
-all = ['nbformat', 'ipython', 'ipykernel', 'black', 'isort', 'twine', 'build', 'pytest', 'mlflow', 'torch', 'torchvision', 'torchmetrics', 'pytorch-lightning']
+all = ['nbformat', 'ipython', 'ipykernel', 'black', 'isort', 'twine', 'build', 'pytest', 'torch']
 
 [tool.pytest.ini_options]
 minversion = "6.0"

@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 
 from ecallisto_ng.combine_antennas.utils import (
     align_to_reference,

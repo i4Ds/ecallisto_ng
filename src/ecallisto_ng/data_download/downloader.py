@@ -3,8 +3,9 @@ import glob
 import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
-from datetime import datetime, timedelta
+from datetime import timedelta
 from functools import partial
+from multiprocessing import current_process
 
 import pandas as pd
 import requests
@@ -210,22 +211,38 @@ def get_instrument_with_available_data(
     return sorted(list(set(instrument_names)))
 
 
+
 def download_fits_process_to_pandas(file_urls, verbose=False):
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-        # Use tqdm for progress tracking, passing the total number of tasks
-        partial_f = partial(fetch_fits_to_pandas, verbose=verbose)
+    # Check if we're in a daemon process
+    is_daemon = current_process().daemon
+    partial_f = partial(fetch_fits_to_pandas, verbose=verbose)
+
+    if not is_daemon:
+        with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+            if verbose:
+                # Show progress bar if verbose is True
+                results = list(
+                    tqdm(
+                        executor.map(partial_f, file_urls),
+                        total=len(file_urls),
+                        desc="Downloading and processing files",
+                    )
+                )
+            else:
+                # Execute without progress bar if verbose is False
+                results = list(executor.map(partial_f, file_urls))
+    else:
+        # Sequential processing for daemon processes
         if verbose:
-            # Show progress bar if verbose is True
             results = list(
                 tqdm(
-                    executor.map(partial_f, file_urls),
+                    map(partial_f, file_urls),
                     total=len(file_urls),
-                    desc="Downloading and processing files",
+                    desc="Downloading and processing files (sequential)",
                 )
             )
         else:
-            # Execute without progress bar if verbose is False
-            results = list(executor.map(partial_f, file_urls))
+            results = list(map(partial_f, file_urls))
     # Check if any of the results are None
     if verbose and any(result is None for result in results):
         print("Some files could not be downloaded (See traceback above).")
@@ -317,9 +334,16 @@ def get_remote_files_url(
         for date in pd.date_range(start_date, end_date, inclusive="both")
     ]
 
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-        # Map each URL to a fetch function with a session
-        results = executor.map(fetch_date_files, date_urls)
+    # Check if we're in a daemon process
+    is_daemon = current_process().daemon
+
+    if not is_daemon:
+        with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+            # Parallel processing
+            results = executor.map(fetch_date_files, date_urls)
+    else:
+        # Sequential processing for daemon processes
+        results = map(fetch_date_files, date_urls)
 
     # Flatten the results
     results = [item for sublist in results for item in sublist]

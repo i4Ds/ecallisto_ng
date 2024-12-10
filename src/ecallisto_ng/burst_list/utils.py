@@ -42,4 +42,4 @@ def load_burst_list(burst_list_file=None):
         burst_list = pd.read_excel(burst_list_file)
     else:
         raise ValueError("Unknown file format")
-    return burst_list
+    return burst_list.sort_values(by="datetime_start")
