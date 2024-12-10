@@ -14,9 +14,13 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from ecallisto_ng.data_download.utils import (
-    concat_dfs_by_instrument, ecallisto_fits_to_pandas,
-    extract_datetime_from_filename, extract_instrument_name, filter_dataframes,
-    instrument_name_to_globbing_pattern)
+    concat_dfs_by_instrument,
+    ecallisto_fits_to_pandas,
+    extract_datetime_from_filename,
+    extract_instrument_name,
+    filter_dataframes,
+    instrument_name_to_globbing_pattern,
+)
 
 BASE_URL = "http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto"
 LOCAL_PATH = "/mnt/nas05/data01/radio/2002-20yy_Callisto"
@@ -60,6 +64,11 @@ def get_ecallisto_data(
     dict of str: `~pandas.DataFrame` or `~pandas.DataFrame`
         Dictionary of instrument names and their corresponding dataframes.
     """
+    if not os.path.exists(LOCAL_PATH) and download_from_local:
+        print(
+            f"Local directory {LOCAL_PATH} does not exist. Downloading from remote directory."
+        )
+        download_from_local = False
     if download_from_local:
         file_urls = get_local_file_paths(start_datetime, end_datetime, instrument_name)
     else:
@@ -209,7 +218,6 @@ def get_instrument_with_available_data(
         return {}
     instrument_names = [extract_instrument_name(file_url) for file_url in file_urls]
     return sorted(list(set(instrument_names)))
-
 
 
 def download_fits_process_to_pandas(file_urls, verbose=False):

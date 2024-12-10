@@ -5,10 +5,12 @@ from scipy.ndimage import median_filter
 from skimage import filters
 from scipy.ndimage import generic_filter
 
-def calculate_snr(data: pd.DataFrame, window: int =  5) -> np.float64:
+
+def calculate_snr(data: pd.DataFrame, window: int = 5) -> np.float64:
     data = subtract_rolling_background(data, window)
     data = data.dropna(axis=0)
     return np.round(np.mean(data) / np.std(data), 3)
+
 
 def min_max_scale_per_column(data: pd.DataFrame) -> pd.DataFrame:
     """

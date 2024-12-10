@@ -6,8 +6,7 @@ import warnings
 import pandas as pd
 import requests
 
-from ecallisto_ng.data_fetching.get_information import \
-    check_table_data_availability
+from ecallisto_ng.data_fetching.get_information import check_table_data_availability
 
 # Import exceptions
 

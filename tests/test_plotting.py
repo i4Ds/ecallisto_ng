@@ -3,8 +3,10 @@ from datetime import datetime
 import numpy as np
 
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
-from ecallisto_ng.plotting.plotting import (plot_spectrogram,
-                                            plot_with_fixed_resolution_mpl)
+from ecallisto_ng.plotting.plotting import (
+    plot_spectrogram,
+    plot_with_fixed_resolution_mpl,
+)
 
 
 def test_single_plot_spectrogram(assa01_dataframe):

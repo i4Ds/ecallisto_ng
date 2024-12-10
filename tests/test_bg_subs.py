@@ -1,8 +1,10 @@
 import pytest
 
 from ecallisto_ng.data_processing.utils import (
-    elimwrongchannels, subtract_constant_background,
-    subtract_low_signal_noise_background)
+    elimwrongchannels,
+    subtract_constant_background,
+    subtract_low_signal_noise_background,
+)
 
 
 @pytest.mark.parametrize(
