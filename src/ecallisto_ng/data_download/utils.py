@@ -1,9 +1,9 @@
 import re
-import warnings
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
+from datetime import datetime, timezone
 
 
 def filter_dataframes(
@@ -33,12 +33,12 @@ def filter_dataframes(
         Dictionary of instrument names and their corresponding dataframes.
     """
     if verbose:
-        print("Filtering dataframes.")
+        print("Filtering dataframes by time....")
     for instrument, df in dfs.items():
         dfs[instrument] = df.loc[start_date:end_date]
 
-    if verbose:
-        print("Filtering frequencies.")
+    if verbose and (freq_start or freq_end):
+        print("Filtering frequencies....")
     if freq_start:
         for instrument, df in dfs.items():
             dfs[instrument] = df.loc[:, freq_start:freq_end]
@@ -56,7 +56,7 @@ def filter_dataframes(
 
     # Update the header
     if verbose:
-        print("Updating headers after filtering.")
+        print("Updating headers after filtering....")
     for instrument, df in dfs.items():
         df = readd_edit_header(df, dfs[instrument].attrs)
     return dfs
@@ -81,6 +81,14 @@ def extract_datetime_from_filename(file_name):
     if match:
         return datetime.strptime(match.group(1) + match.group(2), "%Y%m%d%H%M%S")
     return None
+
+
+def to_naive_utc(dt):
+    # Check if the datetime object has timezone info
+    if dt.tzinfo is not None:
+        # Convert to UTC and remove timezone
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 def instrument_name_to_globbing_pattern(instrument_name=None):
@@ -263,7 +271,7 @@ def concat_dfs_by_instrument(dfs, verbose=False):
     # Extract attrs from each df
     headers = [df.attrs for df in dfs]
     if verbose:
-        print("Combining headers.")
+        print("Combining headers....")
     for df in dfs:
         instrument = df.attrs["INSTRUME"] + "_" + df.attrs["ANTENNAID"]
         if instrument not in instruments:
@@ -271,7 +279,7 @@ def concat_dfs_by_instrument(dfs, verbose=False):
         instruments[instrument].append(df)
 
     if verbose:
-        print("Concatenating dataframes.")
+        print("Concatenating dataframes....")
     for instrument, dfs in instruments.items():
         headers = [df.attrs for df in dfs]
         identical_headers = extract_identical_dicts(headers)

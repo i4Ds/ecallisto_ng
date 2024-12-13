@@ -1,6 +1,6 @@
 import fnmatch
 import glob
-import os
+import sys, os, traceback
 import traceback
 from concurrent.futures import ProcessPoolExecutor
 from datetime import timedelta
@@ -20,6 +20,7 @@ from ecallisto_ng.data_download.utils import (
     extract_instrument_name,
     filter_dataframes,
     instrument_name_to_globbing_pattern,
+    to_naive_utc,
 )
 
 BASE_URL = "http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto"
@@ -43,9 +44,9 @@ def get_ecallisto_data(
     Parameters
     ----------
     start_datetime : datetime-like
-        The start date for the file search.
+        The start date for the file search. If it has a timezone, it will be converted to UTC.
     end_datetime : datetime-like
-        The end date for the file search.
+        The end date for the file search. If it has a timezone, it will be converted to UTC.
     instrument_string : str or None
         The instrument name you want to match in file URLs. If None, all files are considered.
         Substrings also work, such as 'ALASKA'.
@@ -69,6 +70,9 @@ def get_ecallisto_data(
             f"Local directory {LOCAL_PATH} does not exist. Downloading from remote directory."
         )
         download_from_local = False
+    # Sanitize datetime objects
+    start_datetime = to_naive_utc(start_datetime)
+    end_datetime = to_naive_utc(end_datetime)
     if download_from_local:
         file_urls = get_local_file_paths(start_datetime, end_datetime, instrument_name)
     else:
@@ -111,9 +115,9 @@ def get_ecallisto_data_generator(
     Parameters
     ----------
     start_datetime : datetime-like
-        The start date for the file search.
+        The start date for the file search. If it has a timezone, it will be converted to UTC.
     end_datetime : datetime-like
-        The end date for the file search.
+        The end date for the file search. If it has a timezone, it will be converted to UTC.
     instrument_names : List[str] or str or None
         The instrument name you want to match in file URLs. If None, all files are considered.
     freq_start : float or None
@@ -145,6 +149,9 @@ def get_ecallisto_data_generator(
         instrument_name = get_instrument_with_available_data(
             start_datetime, end_datetime
         )
+    # Sanitize datetime objects
+    start_datetime = to_naive_utc(start_datetime)
+    end_datetime = to_naive_utc(end_datetime)
 
     for instrument_name_ in instrument_name:
         file_urls = get_remote_files_url(
@@ -223,7 +230,7 @@ def get_instrument_with_available_data(
 def download_fits_process_to_pandas(file_urls, verbose=False):
     # Check if we're in a daemon process
     is_daemon = current_process().daemon
-    partial_f = partial(fetch_fits_to_pandas, verbose=verbose)
+    partial_f = partial(fetch_fits_to_pandas, verbose=False) # Ultra spam if verbose True because of Fits
 
     if not is_daemon:
         with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
@@ -260,10 +267,12 @@ def download_fits_process_to_pandas(file_urls, verbose=False):
 
 
 def fetch_fits_to_pandas(file_url, verbose=False):
+    old_stdout = sys.stdout
+    if not verbose:
+        sys.stdout = open(os.devnull, 'w')
     try:
         fits_file = fits.open(file_url, cache=False)
         df = ecallisto_fits_to_pandas(fits_file)
-        # Add the instrument name to it
         df.attrs["ANTENNAID"] = extract_instrument_name(file_url)[-2:]
         return df
     except Exception as e:
@@ -271,6 +280,10 @@ def fetch_fits_to_pandas(file_url, verbose=False):
             print(f"Error for {file_url}: {e}")
             traceback.print_exc()
         return None
+    finally:
+        if not verbose:
+            sys.stdout.close()
+            sys.stdout = old_stdout
 
 
 def fetch_date_files(date_url):
