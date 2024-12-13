@@ -29,9 +29,10 @@ def load_radio_dataset(base_path: str) -> Dataset:
     Returns
     -------
     Dataset
-        A Hugging Face Dataset object containing the image data and associated metadata.
+        A Hugging Face Dataset object containing the image data and associated metadata
+        or None if no data is found.
     """
-    images = glob.glob(f"{base_path}*/*.parquet")
+    images = glob.glob(os.path.join(base_path, "*", "*.parquet"))
     df = pd.DataFrame({"image": images})
     df["antenna"] = df["image"].apply(lambda x: x.split("/")[-2])
     df["datetime"] = df["image"].apply(
@@ -40,22 +41,19 @@ def load_radio_dataset(base_path: str) -> Dataset:
     df["datetime"] = pd.to_datetime(df["datetime"], format="%Y-%m-%d_%H-%M-%S")
 
     dataset = Dataset.from_pandas(df)
+    if len(dataset) == 0:
+        return None
 
     def load_image_from_parquet(example):
         path = example["image"]
-        try:
-            d = pd.read_parquet(path)
-            example["image"] = PILImage.fromarray(d.values.T)
-        except Exception as e:
-            print(f"Error loading image from {path}: {e}")
-            example["image"] = None
+        d = pd.read_parquet(path)
+        example["image"] = PILImage.fromarray(d.values.T)
         return example
 
     dataset = dataset.map(load_image_from_parquet)
     dataset = dataset.filter(lambda x: x["image"] is not None)
     dataset = dataset.cast_column("image", Image())
     return dataset
-
 
 
 def create_overlapping_parquets(

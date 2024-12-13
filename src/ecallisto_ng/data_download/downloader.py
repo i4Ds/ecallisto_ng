@@ -230,7 +230,9 @@ def get_instrument_with_available_data(
 def download_fits_process_to_pandas(file_urls, verbose=False):
     # Check if we're in a daemon process
     is_daemon = current_process().daemon
-    partial_f = partial(fetch_fits_to_pandas, verbose=False) # Ultra spam if verbose True because of Fits
+    partial_f = partial(
+        fetch_fits_to_pandas, verbose=False
+    )  # Ultra spam if verbose True because of Fits
 
     if not is_daemon:
         with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
@@ -266,10 +268,10 @@ def download_fits_process_to_pandas(file_urls, verbose=False):
     return results
 
 
-def fetch_fits_to_pandas(file_url, verbose=False):
+def fetch_fits_to_pandas(file_url, verbose):
     old_stdout = sys.stdout
     if not verbose:
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, "w")
     try:
         fits_file = fits.open(file_url, cache=False)
         df = ecallisto_fits_to_pandas(fits_file)
