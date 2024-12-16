@@ -7,7 +7,7 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 def load_radio_dataset(base_path: str) -> Dataset:
