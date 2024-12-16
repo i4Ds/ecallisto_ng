@@ -64,6 +64,7 @@ def create_overlapping_parquets(
     duration: timedelta = timedelta(minutes=15),
     min_duration: timedelta = timedelta(minutes=10),
     overlap: timedelta = timedelta(minutes=1),
+    download_from_local: bool = False,
 ):
     folder = os.path.expanduser(folder)
     os.makedirs(folder, exist_ok=True)
@@ -78,6 +79,7 @@ def create_overlapping_parquets(
                 start_datetime,
                 start_datetime + duration,
                 instrument_name=instrument,
+                download_from_local=download_from_local,
             )
             for inst, df in dfs.items():
                 if df is not None and not df.empty:
