@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/663398161.svg)](https://doi.org/10.5281/zenodo.14505851)
+
 # Ecallisto NG 
 Ecallisto NG is a comprehensive Python package tailored for interacting with Ecallisto data. It focuses on facilitating efficient data manipulation, processing, and visualization, leveraging the power of Pandas for data handling and PyTorch for advanced computations. The package is particularly optimized for dealing with large datasets, providing tools for slicing, filtering, and resampling data to make spectrogram plotting more manageable.
 
