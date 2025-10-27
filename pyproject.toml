@@ -13,7 +13,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    'numpy<2.0.0',
+    'numpy>=2.0.0',
     'pandas>=2.0.0',
     'openpyxl',
     'plotly',
