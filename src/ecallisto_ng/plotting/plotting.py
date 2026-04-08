@@ -4,14 +4,15 @@ import pandas as pd
 import plotly.express as px
 import plotly.io as pio
 
-from ecallisto_ng.data_download.downloader import get_ecallisto_data
-from ecallisto_ng.data_fetching.get_data import NoDataAvailable
-from ecallisto_ng.plotting.utils import (
-    downcast_resolution,
+from src.ecallisto_ng.plotting.utils import (
     return_strftime_based_on_range,
     return_strftime_for_ticks_based_on_range,
     calculate_resample_freq,
 )
+
+from src.ecallisto_ng.data_download.downloader import get_ecallisto_data
+from src.ecallisto_ng.data_fetching.get_data import NoDataAvailable
+from src.ecallisto_ng.plotting.utils import downcast_resolution
 
 
 def plot_spectrogram_mpl(
@@ -90,19 +91,17 @@ def plot_spectrogram_mpl(
         idx = (np.abs(array - value)).argmin()
         return idx
 
-    # Calculate the rough spacing for around 15 labels
-    spacing = max(1, int(df.shape[1] / 15))
-
-    # Create target ticks
-    target_ticks = np.unique((df.columns.astype(float) / 10).astype(int) * 10)
-
-    # Finding the closest indices in the DataFrame to the target_ticks
-    major_ticks = [
-        find_nearest_idx(df.columns.astype(float), tick) for tick in target_ticks
-    ]
+    # Target ~8 evenly-spaced frequency ticks across the visible range.
+    # The old approach (round every channel to nearest 10 MHz) produced
+    # up to 80+ labels for wide-band instruments, causing them to overlap.
+    N_YTICKS = 8
+    freq_vals = df.columns.astype(float)
+    target_freqs = np.linspace(freq_vals.min(), freq_vals.max(), N_YTICKS)
+    major_ticks = [find_nearest_idx(freq_vals, f) for f in target_freqs]
+    major_ticks = list(dict.fromkeys(major_ticks))  # deduplicate while preserving order
 
     # Set major ticks and their appearance
-    ax.set_yticks(major_ticks, minor=False)  # This line was missing
+    ax.set_yticks(major_ticks, minor=False)
     ax.tick_params(axis="y", which="major", length=10, labelsize="medium")
 
     # Create labels based on the position
@@ -119,8 +118,9 @@ def plot_spectrogram_mpl(
     strf_format_ticks = return_strftime_for_ticks_based_on_range(
         end_datetime - start_datetime
     )
+    # Rotate labels so the date+time strings (e.g. "03-16 14:44") don't overlap.
     ax.set_xticklabels(
-        df.index[x_ticks].strftime(strf_format_ticks), rotation=0, ha="center"
+        df.index[x_ticks].strftime(strf_format_ticks), rotation=30, ha="right"
     )
     # Title
     title = (
