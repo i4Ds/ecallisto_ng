@@ -4,15 +4,15 @@ import pandas as pd
 import plotly.express as px
 import plotly.io as pio
 
-from src.ecallisto_ng.plotting.utils import (
+from ecallisto_ng.plotting.utils import (
     return_strftime_based_on_range,
     return_strftime_for_ticks_based_on_range,
     calculate_resample_freq,
 )
 
-from src.ecallisto_ng.data_download.downloader import get_ecallisto_data
-from src.ecallisto_ng.data_fetching.get_data import NoDataAvailable
-from src.ecallisto_ng.plotting.utils import downcast_resolution
+from ecallisto_ng.data_download.downloader import get_ecallisto_data
+from ecallisto_ng.data_fetching.get_data import NoDataAvailable
+from ecallisto_ng.plotting.utils import downcast_resolution
 
 
 def plot_spectrogram_mpl(
