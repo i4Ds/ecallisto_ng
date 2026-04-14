@@ -91,13 +91,30 @@ def plot_spectrogram_mpl(
         idx = (np.abs(array - value)).argmin()
         return idx
 
-    # Target ~8 evenly-spaced frequency ticks across the visible range.
-    # The old approach (round every channel to nearest 10 MHz) produced
-    # up to 80+ labels for wide-band instruments, causing them to overlap.
+    # Target ~8 "nice" frequency ticks (multiples of 100/10/5 MHz depending on band width)
+    # matching the quicklook style on https://soleil.i4ds.ch/solarradio/callistoQuicklooks/
     N_YTICKS = 8
     freq_vals = df.columns.astype(float)
-    target_freqs = np.linspace(freq_vals.min(), freq_vals.max(), N_YTICKS)
-    major_ticks = [find_nearest_idx(freq_vals, f) for f in target_freqs]
+    freq_range = freq_vals.max() - freq_vals.min()
+
+    if freq_range > 500:
+        step = 100
+    elif freq_range > 50:
+        step = 10
+    else:
+        step = 5
+
+    # First and last clean multiple of step that falls inside the data range
+    nice_start = np.ceil(freq_vals.min() / step) * step
+    nice_end = np.floor(freq_vals.max() / step) * step
+    all_nice = np.arange(nice_start, nice_end + step, step)
+
+    # Subsample evenly down to ~N_YTICKS if there are too many
+    if len(all_nice) > N_YTICKS:
+        indices = np.round(np.linspace(0, len(all_nice) - 1, N_YTICKS)).astype(int)
+        all_nice = all_nice[indices]
+
+    major_ticks = [find_nearest_idx(freq_vals, f) for f in all_nice]
     major_ticks = list(dict.fromkeys(major_ticks))  # deduplicate while preserving order
 
     # Set major ticks and their appearance
@@ -156,6 +173,7 @@ def plot_spectrogram_mpl(
         cbar.set_label(cbar_label)
 
     fig.tight_layout()
+    fig.subplots_adjust(left=0.12)
     return fig
 
 
@@ -247,6 +265,7 @@ def plot_with_fixed_resolution_mpl(
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
     - end_datetime_str (str or pd.Timestamp): The ending datetime for the data range.
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
+
     - resolution (int, optional): The desired resolution for plotting. Default is 1440.
         Determines the time bucketing for the data aggregation.
     - fig_size (tuple, optional): The desired figure size. Default is (9, 6).
