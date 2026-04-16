@@ -93,7 +93,7 @@ def plot_spectrogram_mpl(
 
     # Target ~8 "nice" frequency ticks (multiples of 100/10/5 MHz depending on band width)
     # matching the quicklook style on https://soleil.i4ds.ch/solarradio/callistoQuicklooks/
-    N_YTICKS = 8
+    N_YTICKS = 10
     freq_vals = df.columns.astype(float)
     freq_range = freq_vals.max() - freq_vals.min()
 
@@ -105,24 +105,30 @@ def plot_spectrogram_mpl(
         step = 5
 
     # First and last clean multiple of step that falls inside the data range
-    nice_start = np.ceil(freq_vals.min() / step) * step
-    nice_end = np.floor(freq_vals.max() / step) * step
-    all_nice = np.arange(nice_start, nice_end + step, step)
+    start = np.ceil(freq_vals.min() / step) * step
+    end = np.floor(freq_vals.max() / step) * step
+    all_freq = np.concatenate([[freq_vals.min()], np.arange(start, end + step, step), [freq_vals.max()]])
+    all_freq = np.unique(all_freq)
 
     # Subsample evenly down to ~N_YTICKS if there are too many
-    if len(all_nice) > N_YTICKS:
-        indices = np.round(np.linspace(0, len(all_nice) - 1, N_YTICKS)).astype(int)
-        all_nice = all_nice[indices]
+    if len(all_freq) > N_YTICKS:
+        indices = np.round(np.linspace(0, len(all_freq) - 1, N_YTICKS)).astype(int)
+        all_freq = all_freq[indices]
 
-    major_ticks = [find_nearest_idx(freq_vals, f) for f in all_nice]
-    major_ticks = list(dict.fromkeys(major_ticks))  # deduplicate while preserving order
+    # Build ticks and labels together using nice rounded targets, deduplicating by tick index
+    tick_to_label = {}
+    for tick, label in zip(
+            [find_nearest_idx(freq_vals, f) for f in all_freq],
+            [str(int(f)) for f in all_freq],
+    ):
+        if tick not in tick_to_label:
+            tick_to_label[tick] = label
+    major_ticks = list(tick_to_label.keys())
+    major_labels = list(tick_to_label.values())
 
     # Set major ticks and their appearance
     ax.set_yticks(major_ticks, minor=False)
     ax.tick_params(axis="y", which="major", length=10, labelsize="medium")
-
-    # Create labels based on the position
-    major_labels = [str(int(round(float(df.columns[i]), 0))) for i in major_ticks]
     ax.set_yticklabels(major_labels, minor=False)
 
     # Assuming df index is datetime, this will format the x-ticks
