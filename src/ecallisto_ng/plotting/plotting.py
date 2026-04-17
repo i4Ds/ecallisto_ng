@@ -4,14 +4,15 @@ import pandas as pd
 import plotly.express as px
 import plotly.io as pio
 
-from ecallisto_ng.data_download.downloader import get_ecallisto_data
-from ecallisto_ng.data_fetching.get_data import NoDataAvailable
 from ecallisto_ng.plotting.utils import (
-    downcast_resolution,
     return_strftime_based_on_range,
     return_strftime_for_ticks_based_on_range,
     calculate_resample_freq,
 )
+
+from ecallisto_ng.data_download.downloader import get_ecallisto_data
+from ecallisto_ng.data_fetching.get_data import NoDataAvailable
+from ecallisto_ng.plotting.utils import downcast_resolution
 
 
 def plot_spectrogram_mpl(
@@ -90,23 +91,44 @@ def plot_spectrogram_mpl(
         idx = (np.abs(array - value)).argmin()
         return idx
 
-    # Calculate the rough spacing for around 15 labels
-    spacing = max(1, int(df.shape[1] / 15))
+    # Target ~8 "nice" frequency ticks (multiples of 100/10/5 MHz depending on band width)
+    # matching the quicklook style on https://soleil.i4ds.ch/solarradio/callistoQuicklooks/
+    N_YTICKS = 10
+    freq_vals = df.columns.astype(float)
+    freq_range = freq_vals.max() - freq_vals.min()
 
-    # Create target ticks
-    target_ticks = np.unique((df.columns.astype(float) / 10).astype(int) * 10)
+    if freq_range > 500:
+        step = 100
+    elif freq_range > 50:
+        step = 10
+    else:
+        step = 5
 
-    # Finding the closest indices in the DataFrame to the target_ticks
-    major_ticks = [
-        find_nearest_idx(df.columns.astype(float), tick) for tick in target_ticks
-    ]
+    # First and last clean multiple of step that falls inside the data range
+    start = np.ceil(freq_vals.min() / step) * step
+    end = np.floor(freq_vals.max() / step) * step
+    all_freq = np.concatenate([[freq_vals.min()], np.arange(start, end + step, step), [freq_vals.max()]])
+    all_freq = np.unique(all_freq)
+
+    # Subsample evenly down to ~N_YTICKS if there are too many
+    if len(all_freq) > N_YTICKS:
+        indices = np.round(np.linspace(0, len(all_freq) - 1, N_YTICKS)).astype(int)
+        all_freq = all_freq[indices]
+
+    # Build ticks and labels together using nice rounded targets, deduplicating by tick index
+    tick_to_label = {}
+    for tick, label in zip(
+            [find_nearest_idx(freq_vals, f) for f in all_freq],
+            [str(int(f)) for f in all_freq],
+    ):
+        if tick not in tick_to_label:
+            tick_to_label[tick] = label
+    major_ticks = list(tick_to_label.keys())
+    major_labels = list(tick_to_label.values())
 
     # Set major ticks and their appearance
-    ax.set_yticks(major_ticks, minor=False)  # This line was missing
+    ax.set_yticks(major_ticks, minor=False)
     ax.tick_params(axis="y", which="major", length=10, labelsize="medium")
-
-    # Create labels based on the position
-    major_labels = [str(int(round(float(df.columns[i]), 0))) for i in major_ticks]
     ax.set_yticklabels(major_labels, minor=False)
 
     # Assuming df index is datetime, this will format the x-ticks
@@ -119,8 +141,9 @@ def plot_spectrogram_mpl(
     strf_format_ticks = return_strftime_for_ticks_based_on_range(
         end_datetime - start_datetime
     )
+    # Rotate labels so the date+time strings (e.g. "03-16 14:44") don't overlap.
     ax.set_xticklabels(
-        df.index[x_ticks].strftime(strf_format_ticks), rotation=0, ha="center"
+        df.index[x_ticks].strftime(strf_format_ticks), rotation=30, ha="right"
     )
     # Title
     title = (
@@ -156,6 +179,7 @@ def plot_spectrogram_mpl(
         cbar.set_label(cbar_label)
 
     fig.tight_layout()
+    fig.subplots_adjust(left=0.12)
     return fig
 
 
@@ -247,6 +271,7 @@ def plot_with_fixed_resolution_mpl(
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
     - end_datetime_str (str or pd.Timestamp): The ending datetime for the data range.
         Can be a string in the format 'YYYY-MM-DD HH:MM:SS' or a Pandas Timestamp.
+
     - resolution (int, optional): The desired resolution for plotting. Default is 1440.
         Determines the time bucketing for the data aggregation.
     - fig_size (tuple, optional): The desired figure size. Default is (9, 6).
