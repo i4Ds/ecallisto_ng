@@ -20,7 +20,7 @@ Ecallisto NG is a comprehensive Python package tailored for interacting with Eca
   - [Contributing](#contributing)
 
 ## Background
-The package is built with Python 3.9<3.12 and primarily uses the Pandas library for data manipulation. It's core functionality is centered around efficient data processing and visualization. The data provided by e-Callisto is stored in a pandas Dataframe, where the index is the time and the column names are the observed frequencies.
+The package is built with Python 3.9<3.13 and primarily uses the Pandas library for data manipulation. It's core functionality is centered around efficient data processing and visualization. The data provided by e-Callisto is stored in a pandas Dataframe, where the index is the time and the column names are the observed frequencies.
 
 ## PyPI
 Available on PyPI: https://pypi.org/project/ecallisto-ng/
