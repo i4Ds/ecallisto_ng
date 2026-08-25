@@ -1,4 +1,8 @@
+from collections.abc import Sequence
+from typing import Literal
+
 import numpy as np
+import pandas as pd
 
 from ecallisto_ng.combine_antennas.utils import (
     align_to_reference,
@@ -19,51 +23,44 @@ from ecallisto_ng.data_processing.utils import (
 from ecallisto_ng.plotting.utils import downcast_timedelta
 
 
-def match_spectrograms(datas):
-    """
-    Match the time and frequency dimensions across a list of spectrogram DataFrames.
-    Basically, takes the max and min time and frequency values and makes all the
-    DataFrames have the same time and frequency dimensions and fills them with nans.
-    Incase a NaN is between numbers, it is linearly interpolated.
+def match_spectrograms(datas: Sequence[pd.DataFrame]) -> list[pd.DataFrame]:
+    """Match the time and frequency dimensions across a list of spectrogram
+    DataFrames. Basically, takes the max and min time and frequency values and
+    makes all the DataFrames have the same time and frequency dimensions and
+    fills them with nans. Incase a NaN is between numbers, it is linearly
+    interpolated.
 
-    Parameters
-    ----------
-    datas : list of pd.DataFrame
-        List of spectrogram DataFrames to be matched.
+    Parameters ---------- datas : list of pd.DataFrame     List of spectrogram
+    DataFrames to be matched.
 
-    Returns
-    -------
-    list of pd.DataFrame
-        List of matched spectrogram DataFrames.
+    Returns ------- list of pd.DataFrame     List of matched spectrogram
+    DataFrames.
     """
     data_processed = make_times_match_spectrograms(datas)
     data_processed = make_frequencies_match_spectrograms(data_processed)
     return data_processed
 
 
-def sync_spectrograms(dfs, shifts=None, method="maximize_cross_correlation"):
-    """
-    Synchronize a list of spectrograms based on pairwise cross-correlation.
-    If the nans are not removed, this method does not work because it can
-    lead to pointless shifts.
+def sync_spectrograms(
+    dfs: Sequence[pd.DataFrame],
+    shifts: Sequence[float] | np.ndarray | None = None,
+    method: Literal["maximize_cross_correlation"] = "maximize_cross_correlation",
+) -> tuple[list[pd.DataFrame], int | np.integer | None]:
+    """Synchronize a list of spectrograms based on pairwise cross-correlation.
 
-    Parameters
-    ----------
-    dfs : list of pd.DataFrame
-        List of spectrogram DataFrames to be synchronized.
-    shifts : np.ndarray, optional
-        List of shifts to apply to each DataFrame, incase you want to
-        calculate the shift outside of this function.
-    method : str, optional
-        The method used for synchronization. Currently only supports 'maximize_cross_correlation'.
-        Default is 'maximize_cross_correlation'.
+    If the nans are not removed, this method does not work because it can lead
+    to pointless shifts.
 
-    Returns
-    -------
-    list of pd.DataFrame
-        List of synchronized spectrogram DataFrames.
-    int or None
-        Index of the DataFrame used as a reference for synchronization.
+    Parameters ---------- dfs : list of pd.DataFrame     List of spectrogram
+    DataFrames to be synchronized. shifts : np.ndarray, optional     List of
+    shifts to apply to each DataFrame, incase you want to     calculate the
+    shift outside of this function. method : str, optional     The method used
+    for synchronization. Currently only supports 'maximize_cross_correlation'.
+    Default is 'maximize_cross_correlation'.
+
+    Returns ------- list of pd.DataFrame     List of synchronized spectrogram
+    DataFrames. int or None     Index of the DataFrame used as a reference for
+    synchronization.
     """
     if method != "maximize_cross_correlation":
         raise ValueError("Unsupported method")
@@ -77,7 +74,8 @@ def sync_spectrograms(dfs, shifts=None, method="maximize_cross_correlation"):
         for df in dfs:
             if df.isnull().all(axis=1).any():
                 ValueError(
-                    "Time axis of a df is all nan. This method does not work with nan values."
+                    "Time axis of a df is all nan. This method does not work "
+                    "with nan values."
                 )
         cross_corr_matrix = get_cross_corr_matrix(dfs)
         # Find the best reference and align all to it
@@ -93,41 +91,31 @@ def sync_spectrograms(dfs, shifts=None, method="maximize_cross_correlation"):
 
 
 def preprocess_data(
-    datas,
-    db_space,
-    resample_time_delta,
-    min_n_frequencies,
-    freq_range,
-    filter_type,
-    filter_size,
-    filter_quantile_value,
-    subtract_background,
-    resample_func="mean",
-):
-    """
-    Process a list of DataFrames based on a series of filtering and transformation steps.
+    datas: Sequence[pd.DataFrame],
+    db_space: bool,
+    resample_time_delta: pd.Timedelta,
+    min_n_frequencies: int,
+    freq_range: Sequence[float],
+    filter_type: Literal["median", "mean", "quantile"] | None,
+    filter_size: tuple[int, int],
+    filter_quantile_value: float,
+    subtract_background: bool,
+    resample_func: Literal["mean", "max", "min"] = "mean",
+) -> list[pd.DataFrame]:
+    """Process a list of DataFrames based on a series of filtering and
+    transformation steps.
 
-    Parameters
-    ----------
-    datas : list of pd.DataFrame
-        List of DataFrames to be processed.
-    min_n_frequencies : int, optional
-        Minimum number of frequencies required for processing. Default is 100.
-    freq_range : list of float, optional
-        Frequency range to keep. Default is [20, 80].
-    filter_type : str, optional
-        Type of filter to apply ('median' or 'mean'). Default is None.
-    filter_size: tuple(int, int)
-        Size of filter in pixel.
-    filter_quantile_value: float
-        Quantile value to use for filtering.
-    resample_func : str, optional
-        Resampling function to use. Default is 'MEAN'.
+    Parameters ---------- datas : list of pd.DataFrame     List of DataFrames
+    to be processed. min_n_frequencies : int, optional     Minimum number of
+    frequencies required for processing. Default is 100. freq_range : list of
+    float, optional     Frequency range to keep. Default is [20, 80].
+    filter_type : str, optional     Type of filter to apply ('median' or
+    'mean'). Default is None. filter_size: tuple(int, int)     Size of filter
+    in pixel. filter_quantile_value: float     Quantile value to use for
+    filtering. resample_func : str, optional     Resampling function to use.
+    Default is 'MEAN'.
 
-    Returns
-    -------
-    list of pd.DataFrame
-        List of processed DataFrames.
+    Returns ------- list of pd.DataFrame     List of processed DataFrames.
     """
     data_processed = []
     for data in datas:
@@ -141,7 +129,8 @@ def preprocess_data(
         # Check column conditions
         if len(data.columns) < min_n_frequencies:
             print(
-                f"Skipping {data.attrs['FULLNAME']} it has only has {len(data.columns)} out of {min_n_frequencies} frequencies"
+                f"Skipping {data.attrs['FULLNAME']} it has only has "
+                f"{len(data.columns)} out of {min_n_frequencies} frequencies"
             )
             continue
 

@@ -1,22 +1,19 @@
+from typing import Any
+
 import pandas as pd
 import requests
 
 BASE_URL = "https://v000792.fhnw.ch"
 
 
-def get_tables(verbose=False):
-    """
-    Fetch all the available table names from the eCallisto API.
+def get_tables(verbose: bool = False) -> list[str]:
+    """Fetch all the available table names from the eCallisto API.
 
-    Parameters
-    ----------
-    verbose : bool
-        Whether to print out the response from the API.
+    Parameters ---------- verbose : bool     Whether to print out the response
+    from the API.
 
-    Returns
-    -------
-    list of str
-        A list containing the names of the available tables.
+    Returns ------- list of str     A list containing the names of the
+    available tables.
     """
     response = requests.get(BASE_URL + "/api/tables")
 
@@ -30,24 +27,20 @@ def get_tables(verbose=False):
 
 
 def get_table_names_with_data_between_dates(
-    start_datetime, end_datetime, verbose=False
-):
-    """
-    Fetch all the available table names that contain data between the specified dates from the eCallisto API.
+    start_datetime: str,
+    end_datetime: str,
+    verbose: bool = False,
+) -> list[str]:
+    """Fetch all the available table names that contain data between the
+    specified dates from the eCallisto API.
 
-    Parameters
-    ----------
-    start_datetime : str
-        The start datetime of the data availability check.
-    end_datetime : str
-        The end datetime of the data availability check.
-    verbose : bool
-        Whether to print out the response from the API.
+    Parameters ---------- start_datetime : str     The start datetime of the
+    data availability check. end_datetime : str     The end datetime of the
+    data availability check. verbose : bool     Whether to print out the
+    response from the API.
 
-    Returns
-    -------
-    list of str
-        A list containing the names of the available tables that contain data between the specified dates.
+    Returns ------- list of str     A list containing the names of the
+    available tables that contain data between the specified dates.
     """
     data = {
         "start_datetime": start_datetime,
@@ -69,22 +62,17 @@ def get_table_names_with_data_between_dates(
         raise ValueError(f"Error getting table names from API: {response.text}")
 
 
-def check_min_max_datetime_in_table(instrument_name, verbose=False, **kwargs):
-    """
-    Check the minimum and maximum datetimes in a table using the eCallisto API.
+def check_min_max_datetime_in_table(
+    instrument_name: str, verbose: bool = False, **kwargs: Any
+) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """Check the minimum and maximum datetimes in a table using the eCallisto
+    API.
 
-    Parameters
-    ----------
-    instrument_name : str
-        The name of the table to check.
-    verbose : bool
-        Whether to print out the response from the API.
+    Parameters ---------- instrument_name : str     The name of the table to
+    check. verbose : bool     Whether to print out the response from the API.
 
-    Returns
-    -------
-    dict
-        A dictionary containing 'min_datetime' and 'max_datetime' if successful,
-        raises ValueError otherwise.
+    Returns ------- dict     A dictionary containing 'min_datetime' and
+    'max_datetime' if successful,     raises ValueError otherwise.
     """
     data = {"instrument_name": instrument_name}
 
@@ -99,7 +87,8 @@ def check_min_max_datetime_in_table(instrument_name, verbose=False, **kwargs):
         )
         if verbose:
             print(
-                f"Table '{instrument_name}' has minimum datetime at {min_datetime} and maximum datetime at {max_datetime}"
+                f"Table '{instrument_name}' has minimum datetime at "
+                f"{min_datetime} and maximum datetime at {max_datetime}"
             )
         return min_datetime, max_datetime
     else:
@@ -107,26 +96,22 @@ def check_min_max_datetime_in_table(instrument_name, verbose=False, **kwargs):
 
 
 def check_table_data_availability(
-    instrument_name, start_datetime, end_datetime, verbose=False, **kwargs
-):
-    """
-    Check if a table has data between the specified dates using the eCallisto API.
+    instrument_name: str,
+    start_datetime: str,
+    end_datetime: str,
+    verbose: bool = False,
+    **kwargs: Any,
+) -> bool:
+    """Check if a table has data between the specified dates using the
+    eCallisto API.
 
-    Parameters
-    ----------
-    instrument_name : str
-        The name of the table to check.
-    start_datetime : str
-        The start datetime of the data availability check.
-    end_datetime : str
-        The end datetime of the data availability check.
-    verbose : bool
-        Whether to print out the response from the API.
+    Parameters ---------- instrument_name : str     The name of the table to
+    check. start_datetime : str     The start datetime of the data availability
+    check. end_datetime : str     The end datetime of the data availability
+    check. verbose : bool     Whether to print out the response from the API.
 
-    Returns
-    -------
-    bool
-        True if the table has data between the specified dates, False otherwise.
+    Returns ------- bool     True if the table has data between the specified
+    dates, False otherwise.
     """
     data = {
         "instrument_name": instrument_name,
@@ -144,7 +129,8 @@ def check_table_data_availability(
         has_data = response.json()["has_data"]
         if verbose:
             print(
-                f"Table '{instrument_name}' has data between {start_datetime} and {end_datetime}: {has_data}"
+                f"Table '{instrument_name}' has data between {start_datetime} "
+                f"and {end_datetime}: {has_data}"
             )
         return has_data
     else:

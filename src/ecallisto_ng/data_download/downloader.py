@@ -1,11 +1,14 @@
 import fnmatch
 import glob
-import sys, os, traceback
+import os
+import sys
 import traceback
 from concurrent.futures import ProcessPoolExecutor
-from datetime import timedelta
+from collections.abc import Generator, Sequence
+from datetime import datetime, timedelta
 from functools import partial
 from multiprocessing import current_process
+from os import PathLike
 
 import pandas as pd
 import requests
@@ -22,52 +25,45 @@ from ecallisto_ng.data_download.utils import (
     instrument_name_to_globbing_pattern,
     to_naive_utc,
 )
+from ecallisto_ng.data_download.utils import DataFrameByInstrument
 
 BASE_URL = "http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto"
 LOCAL_PATH = "/mnt/nas05/data01/radio/2002-20yy_Callisto"
 
 
 def get_ecallisto_data(
-    start_datetime,
-    end_datetime,
-    instrument_name=None,
-    verbose=False,
-    freq_start=None,
-    freq_end=None,
-    download_from_local=False,
-):
-    """
-    Get the e-Callisto data within a date range and optional instrument regex pattern.
-    For big requests, it is recommended to use the generator function `get_ecallisto_data_generator`,
-    which allows for processing each file individually without loading everything into memory at once.
+    start_datetime: datetime | pd.Timestamp,
+    end_datetime: datetime | pd.Timestamp,
+    instrument_name: str | None = None,
+    verbose: bool = False,
+    freq_start: float | None = None,
+    freq_end: float | None = None,
+    download_from_local: bool = False,
+) -> DataFrameByInstrument:
+    """Get the e-Callisto data within a date range and optional instrument
+    regex pattern. For big requests, it is recommended to use the generator
+    function `get_ecallisto_data_generator`, which allows for processing each
+    file individually without loading everything into memory at once.
 
-    Parameters
-    ----------
-    start_datetime : datetime-like
-        The start date for the file search. If it has a timezone, it will be converted to UTC.
-    end_datetime : datetime-like
-        The end date for the file search. If it has a timezone, it will be converted to UTC.
-    instrument_string : str or None
-        The instrument name you want to match in file URLs. If None, all files are considered.
-        Substrings also work, such as 'ALASKA'.
-    verbose : bool
-        Whether to print progress information.
-    freq_start : float or None
-        The start frequency for the filter.
-    freq_end : float or None
-        The end frequency for the filter.
-    download_from_local : bool
-        Whether to download the files from the local directory instead of the remote directory.
-        Useful if you are working with a local copy of the data.
+    Parameters ---------- start_datetime : datetime-like     The start date for
+    the file search. If it has a timezone, it will be converted to UTC.
+    end_datetime : datetime-like     The end date for the file search. If it
+    has a timezone, it will be converted to UTC. instrument_string : str or
+    None     The instrument name you want to match in file URLs. If None, all
+    files are considered.     Substrings also work, such as 'ALASKA'. verbose :
+    bool     Whether to print progress information. freq_start : float or None
+    The start frequency for the filter. freq_end : float or None     The end
+    frequency for the filter. download_from_local : bool     Whether to
+    download the files from the local directory instead of the remote
+    directory.     Useful if you are working with a local copy of the data.
 
-    Returns
-    -------
-    dict of str: `~pandas.DataFrame` or `~pandas.DataFrame`
-        Dictionary of instrument names and their corresponding dataframes.
+    Returns ------- dict of str: `~pandas.DataFrame` or `~pandas.DataFrame`
+    Dictionary of instrument names and their corresponding dataframes.
     """
     if not os.path.exists(LOCAL_PATH) and download_from_local:
         print(
-            f"Local directory {LOCAL_PATH} does not exist. Downloading from remote directory."
+            f"Local directory {LOCAL_PATH} does not exist. Downloading from "
+            "remote directory."
         )
         download_from_local = False
     # Sanitize datetime objects
@@ -79,7 +75,8 @@ def get_ecallisto_data(
         file_urls = get_remote_files_url(start_datetime, end_datetime, instrument_name)
     if not file_urls and verbose:
         print(
-            f"No files found for {instrument_name} between {start_datetime} and {end_datetime}."
+            f"No files found for {instrument_name} between {start_datetime} "
+            f"and {end_datetime}."
         )
         return {}
     dfs = download_fits_process_to_pandas(file_urls, verbose)
@@ -96,30 +93,34 @@ def get_ecallisto_data(
 
 
 def get_ecallisto_data_generator(
-    start_datetime,
-    end_datetime,
-    instrument_name=None,
-    freq_start=None,
-    freq_end=None,
-    verbose=False,
-    base_url=BASE_URL,
-):
+    start_datetime: datetime | pd.Timestamp,
+    end_datetime: datetime | pd.Timestamp,
+    instrument_name: str | Sequence[str] | None = None,
+    freq_start: float | None = None,
+    freq_end: float | None = None,
+    verbose: bool = False,
+    base_url: str = BASE_URL,
+) -> Generator[tuple[str, pd.DataFrame], None, dict[str, pd.DataFrame] | None]:
     """
     Generator function to yield e-Callisto data one file at a time within a date range.
     It returns a tuple with (instrument_name, dataframe)
 
-    This function is a generator, using `yield` to return dataframes one by one. This is beneficial
-    for handling large datasets or when working with limited memory, as it allows for processing
+    This function is a generator, using `yield` to return dataframes one by one.
+    This is beneficial for handling large datasets or when working with limited
+    memory, as it allows for processing
     each file individually without loading everything into memory at once.
 
     Parameters
     ----------
     start_datetime : datetime-like
-        The start date for the file search. If it has a timezone, it will be converted to UTC.
+        The start date for the file search. If it has a timezone, it will be
+        converted to UTC.
     end_datetime : datetime-like
-        The end date for the file search. If it has a timezone, it will be converted to UTC.
+        The end date for the file search. If it has a timezone, it will be
+        converted to UTC.
     instrument_names : List[str] or str or None
-        The instrument name you want to match in file URLs. If None, all files are considered.
+        The instrument name you want to match in file URLs. If None, all files
+        are considered.
     freq_start : float or None
         The start frequency for the filter.
     freq_end : float or None
@@ -134,17 +135,14 @@ def get_ecallisto_data_generator(
 
     Example
     -------
-    >>> start = <start_datetime>
-    >>> end = <end_datetime>
-    >>> instrument = <instrument_name>
-    >>> data_generator = get_ecallisto_data_generator(start, end, instrument)
-    >>> for instrument_name, data_frame in data_generator:
-    ...     process_data(data_frame)  # Replace with your processing function or whatever you want to do with the data
+    Use ``get_ecallisto_data_generator(start, end, instrument)`` and iterate
+    over the returned ``(instrument_name, data_frame)`` pairs.
     """
     if isinstance(instrument_name, str):
         instrument_name = [instrument_name]
     if instrument_name is None:
-        # Get all instrument names with available data. This makes the generator more efficient
+        # Get all instrument names with available data. This makes the
+        # generator more efficient
         # because it doesn't have to check for each instrument name individually.
         instrument_name = get_instrument_with_available_data(
             start_datetime, end_datetime
@@ -159,7 +157,8 @@ def get_ecallisto_data_generator(
         )
         if not file_urls and verbose:
             print(
-                f"No files found for {instrument_name} between {start_datetime} and {end_datetime}."
+                f"No files found for {instrument_name} between {start_datetime} "
+                f"and {end_datetime}."
             )
             return {}
         try:
@@ -181,35 +180,46 @@ def get_ecallisto_data_generator(
 
 
 def get_instrument_with_available_data(
-    start_date=None, end_date=None, instrument_name=None
-):
-    """
-    Retrieve sorted list of unique instrument names with available data in a specified date range.
+    start_date: datetime | pd.Timestamp | None = None,
+    end_date: datetime | pd.Timestamp | None = None,
+    instrument_name: str | None = None,
+) -> list[str] | dict[str, pd.DataFrame]:
+    """Retrieve sorted list of unique instrument names with available data in a
+    specified date range.
 
     Parameters
     ----------
     start_date : pd.Timestamp or None
         The start date for querying data. If None, the current timestamp is used.
     end_date : pd.Timestamp or None
-        The end date for querying data. If None, it is set to three days prior to the current timestamp.
+        The end date for querying data. If None, it is set to three days prior
+        to the current timestamp.
     instrument_name : str, optional
-        Name of the specific instrument to query. If None, all available instruments are considered.
+        Name of the specific instrument to query. If None, all available
+        instruments are considered.
 
     Returns
     -------
     list of str
-        A sorted list of unique instrument names for which data is available in the specified date range.
+        A sorted list of unique instrument names for which data is available in
+        the specified date range.
         Returns an empty list if no data is found.
 
     Notes
     -----
-    - The function depends on `get_remote_files_url` to fetch URLs of available data files.
+    - The function depends on `get_remote_files_url` to fetch URLs of available
+      data files.
     - `extract_instrument_name` is used to parse instrument names from the file URLs.
-    - If both `start_date` and `end_date` are None, the function defaults to a date range from the current date to three days prior.
+    - If both `start_date` and `end_date` are None, the function defaults to a
+      date range from the current date to three days prior.
 
     Examples
     --------
-    >>> get_instrument_with_available_data(pd.Timestamp('2023-01-01'), pd.Timestamp('2023-01-10'), 'Instrument')
+    >>> get_instrument_with_available_data(
+    ...     pd.Timestamp('2023-01-01'),
+    ...     pd.Timestamp('2023-01-10'),
+    ...     'Instrument',
+    ... )
     ['InstrumentA', 'InstrumentB', 'InstrumentX']
     """
     if start_date is None or end_date is None:
@@ -227,7 +237,9 @@ def get_instrument_with_available_data(
     return sorted(list(set(instrument_names)))
 
 
-def download_fits_process_to_pandas(file_urls, verbose=False):
+def download_fits_process_to_pandas(
+    file_urls: Sequence[str | PathLike[str]], verbose: bool = False
+) -> list[pd.DataFrame]:
     # Check if we're in a daemon process
     is_daemon = current_process().daemon
     partial_f = partial(
@@ -268,7 +280,9 @@ def download_fits_process_to_pandas(file_urls, verbose=False):
     return results
 
 
-def fetch_fits_to_pandas(file_url, verbose):
+def fetch_fits_to_pandas(
+    file_url: str | PathLike[str], verbose: bool
+) -> pd.DataFrame | None:
     old_stdout = sys.stdout
     if not verbose:
         sys.stdout = open(os.devnull, "w")
@@ -288,21 +302,14 @@ def fetch_fits_to_pandas(file_url, verbose):
             sys.stdout = old_stdout
 
 
-def fetch_date_files(date_url):
-    """
-    Fetch and parse file URLs from a given date URL.
+def fetch_date_files(date_url: str) -> list[str]:
+    """Fetch and parse file URLs from a given date URL.
 
-    Parameters
-    ----------
-    date_url : str
-        The URL for a specific date to fetch files from.
-    session : requests.Session
-        The requests session object for HTTP requests.
+    Parameters ---------- date_url : str     The URL for a specific date to
+    fetch files from. session : requests.Session     The requests session
+    object for HTTP requests.
 
-    Returns
-    -------
-    list of str
-        List of file URLs ending with '.gz'.
+    Returns ------- list of str     List of file URLs ending with '.gz'.
     """
     session = requests.Session()
     response = session.get(date_url)
@@ -326,30 +333,22 @@ def fetch_date_files(date_url):
 
 
 def get_remote_files_url(
-    start_date,
-    end_date,
-    instrument_name=None,
-    base_url="http://soleil80.cs.technik.fhnw.ch/solarradio/data/2002-20yy_Callisto",
-):
-    """
-    Get the remote file URLs within a date range and optional instrument regex pattern.
+    start_date: datetime | pd.Timestamp,
+    end_date: datetime | pd.Timestamp,
+    instrument_name: str | None = None,
+    base_url: str = BASE_URL,
+) -> list[str]:
+    """Get the remote file URLs within a date range and optional instrument
+    regex pattern.
 
-    Parameters
-    ----------
-    start_date : datetime-like
-        The start date for the file search.
-    end_date : datetime-like
-        The end date for the file search.
-    instrument_string : str or None
-        The instrument name you want to match in file URLs. If None, all files are considered.
-        Substrings also work, such as 'ALASKA'.
-    base_url : str
-        The base URL of the remote file directory.
+    Parameters ---------- start_date : datetime-like     The start date for the
+    file search. end_date : datetime-like     The end date for the file search.
+    instrument_string : str or None     The instrument name you want to match
+    in file URLs. If None, all files are considered.     Substrings also work,
+    such as 'ALASKA'. base_url : str     The base URL of the remote file
+    directory.
 
-    Returns
-    -------
-    list of str
-        List of file URLs that match the criteria.
+    Returns ------- list of str     List of file URLs that match the criteria.
     """
     file_urls = []
     date_urls = [
@@ -392,30 +391,21 @@ def get_remote_files_url(
 
 
 def get_local_file_paths(
-    start_date,
-    end_date,
-    instrument_name=None,
-    base_path=LOCAL_PATH,
-):
-    """
-    Get the local file paths within a date range and optional instrument regex pattern.
+    start_date: datetime | pd.Timestamp,
+    end_date: datetime | pd.Timestamp,
+    instrument_name: str | None = None,
+    base_path: str | PathLike[str] = LOCAL_PATH,
+) -> list[str]:
+    """Get the local file paths within a date range and optional instrument
+    regex pattern.
 
-    Parameters
-    ----------
-    start_date : datetime-like
-        The start date for the file search.
-    end_date : datetime-like
-        The end date for the file search.
-    instrument_name : str or None
-        The instrument name to match in file paths. If None, all files are considered.
-        Substrings also work, such as 'ALASKA'.
-    base_path : str
-        The base path of the local file directory.
+    Parameters ---------- start_date : datetime-like     The start date for the
+    file search. end_date : datetime-like     The end date for the file search.
+    instrument_name : str or None     The instrument name to match in file
+    paths. If None, all files are considered.     Substrings also work, such as
+    'ALASKA'. base_path : str     The base path of the local file directory.
 
-    Returns
-    -------
-    list of str
-        List of file paths that match the criteria.
+    Returns ------- list of str     List of file paths that match the criteria.
     """
     file_paths = []
     for date in pd.date_range(start_date, end_date, inclusive="both"):
@@ -432,7 +422,8 @@ def get_local_file_paths(
 
         # Use glob to find files that match the search pattern
         for file_path in glob.glob(search_pattern):
-            # Assuming extract_datetime_from_filename extracts the datetime from the filename
+            # Assuming extract_datetime_from_filename extracts the datetime from the
+            # filename
             file_datetime = extract_datetime_from_filename(file_path)
             # Check if the file's datetime is within the range
             if (

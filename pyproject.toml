@@ -1,11 +1,11 @@
 [project]
 name = "ecallisto-ng"
-version = "1.1.9"
+version = "1.2.0"
 authors = [{name = "Vincenzo Timmel", email = "vincenzo.timmel@fhnw.ch"}]
 description = "A Python package for the fetching (and some processing and plotting) of eCallisto data based on request and pandas."
 readme = "README.md"
 
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10"
 
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -25,7 +25,8 @@ dependencies = [
     'bs4',
     'lxml',
     'astropy',
-    'tqdm'
+    'tqdm',
+    "flake8>=7.3.0",
 ]
 [project.optional-dependencies]
 nb = ['nbformat', 'ipython', 'ipykernel']
@@ -42,6 +43,9 @@ testpaths = [
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+ecallisto_ng = ["py.typed"]
 
 [project.urls]
 Homepage = "https://github.com/i4Ds/ecallisto_ng"

@@ -1,9 +1,10 @@
 import os
+from os import PathLike
 
 import pandas as pd
 
 
-def load_burst_list(burst_list_file=None):
+def load_burst_list(burst_list_file: str | PathLike[str] | None = None) -> pd.DataFrame:
     """
     Load a burst list from a specified Excel file into a pandas DataFrame.
 
@@ -36,6 +37,7 @@ def load_burst_list(burst_list_file=None):
         burst_list_file = os.path.join(
             os.path.dirname(__file__), "data", "burst_list.xlsx"
         )
+    burst_list_file = os.fspath(burst_list_file)
     if burst_list_file.endswith(".csv"):
         burst_list = pd.read_csv(burst_list_file)
     elif burst_list_file.endswith(".xlsx"):

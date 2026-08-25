@@ -1,36 +1,33 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
-from datetime import datetime, timezone
+from astropy.io.fits.hdu.hdulist import HDUList
+
+DataFrameByInstrument = dict[str, pd.DataFrame]
 
 
 def filter_dataframes(
-    dfs, start_date, end_date, verbose=False, freq_start=None, freq_end=None
-):
-    """
-    Filter the dataframes in a dictionary by a date range.
+    dfs: DataFrameByInstrument,
+    start_date: datetime | pd.Timestamp,
+    end_date: datetime | pd.Timestamp,
+    verbose: bool = False,
+    freq_start: float | None = None,
+    freq_end: float | None = None,
+) -> DataFrameByInstrument:
+    """Filter the dataframes in a dictionary by a date range.
 
-    Parameters
-    ----------
-    dfs : dict of str: `~pandas.DataFrame`
-        Dictionary of instrument names and their corresponding dataframes.
-    start_date : datetime-like
-        The start date for the filter.
-    end_date : datetime-like
-        The end date for the filter.
-    verbose : bool
-        Whether to print progress information.
-    freq_start : float or None
-        The start frequency for the filter.
-    freq_end : float or None
-        The end frequency for the filter.
+    Parameters ---------- dfs : dict of str: `~pandas.DataFrame`     Dictionary
+    of instrument names and their corresponding dataframes. start_date :
+    datetime-like     The start date for the filter. end_date : datetime-like
+    The end date for the filter. verbose : bool     Whether to print progress
+    information. freq_start : float or None     The start frequency for the
+    filter. freq_end : float or None     The end frequency for the filter.
 
-    Returns
-    -------
-    dict of str: `~pandas.DataFrame`
-        Dictionary of instrument names and their corresponding dataframes.
+    Returns ------- dict of str: `~pandas.DataFrame`     Dictionary of
+    instrument names and their corresponding dataframes.
     """
     if verbose:
         print("Filtering dataframes by time....")
@@ -62,19 +59,14 @@ def filter_dataframes(
     return dfs
 
 
-def extract_datetime_from_filename(file_name):
-    """
-    Extract datetime from the filename.
+def extract_datetime_from_filename(file_name: str) -> datetime | None:
+    """Extract datetime from the filename.
 
-    Parameters
-    ----------
-    file_name : str
-        The filename from which to extract the datetime.
+    Parameters ---------- file_name : str     The filename from which to
+    extract the datetime.
 
-    Returns
-    -------
-    datetime
-        The extracted datetime object, or None if parsing fails.
+    Returns ------- datetime     The extracted datetime object, or None if
+    parsing fails.
     """
     # Filename format: 'LOCATION_YYYYMMDD_HHMMSS_X.fit.gz'
     match = re.search(r"_(\d{8})_(\d{6})", file_name)
@@ -83,7 +75,7 @@ def extract_datetime_from_filename(file_name):
     return None
 
 
-def to_naive_utc(dt):
+def to_naive_utc(dt: datetime | pd.Timestamp) -> datetime | pd.Timestamp:
     # Check if the datetime object has timezone info
     if dt.tzinfo is not None:
         # Convert to UTC and remove timezone
@@ -91,19 +83,14 @@ def to_naive_utc(dt):
     return dt
 
 
-def instrument_name_to_globbing_pattern(instrument_name=None):
-    """
-    Convert an instrument name (and optional antenna number) to a globbing pattern suitable for matching in file URLs.
+def instrument_name_to_globbing_pattern(instrument_name: str | None = None) -> str:
+    """Convert an instrument name (and optional antenna number) to a globbing
+    pattern suitable for matching in file URLs.
 
-    Parameters
-    ----------
-    instrument_name : str
-        The instrument name to be matched in the file URLs.
+    Parameters ---------- instrument_name : str     The instrument name to be
+    matched in the file URLs.
 
-    Returns
-    -------
-    str
-        A matching pattern string.
+    Returns ------- str     A matching pattern string.
     """
     if instrument_name is None:
         return "*.fit.gz"
@@ -118,28 +105,24 @@ def instrument_name_to_globbing_pattern(instrument_name=None):
     return glob_pattern
 
 
-def combine_non_unique_frequency_axis(freq_axis, data, agg_function=np.max):
+def combine_non_unique_frequency_axis(
+    freq_axis: np.ndarray,
+    data: np.ndarray,
+    agg_function: Callable[..., np.ndarray] = np.max,
+) -> tuple[np.ndarray, np.ndarray]:
     """Combine non-unique frequency axis data.
 
-    Parameters
-    ----------
-    spec : `~astropy.io.fits.hdu.hdulist.HDUList`
-        The spectrogram to combine the frequency axis data of.
-    method : callable
-        The method to use to combine the frequency axis data. Defaults to "mean".
+    Parameters ---------- spec : `~astropy.io.fits.hdu.hdulist.HDUList`     The
+    spectrogram to combine the frequency axis data of. method : callable
+    The method to use to combine the frequency axis data. Defaults to "mean".
 
-    Returns
-    -------
-    unique_freq_axis : `~numpy.ndarray`
-        The unique frequency axis data.
-    data : `~numpy.ndarray`
-        The combined data.
+    Returns ------- unique_freq_axis : `~numpy.ndarray`     The unique
+    frequency axis data. data : `~numpy.ndarray`     The combined data.
 
-
-    Notes
-    -----
-    The function first finds the unique frequency axis data and the indices of the non-unique frequency axis data.
-    It then combines the non-unique frequency axis data using the method specified by the `method` parameter.
+     Notes ----- The function first finds the unique frequency axis data and
+    the indices of the non-unique frequency axis data. It then combines the
+    non-unique frequency axis data using the method specified by the `method`
+    parameter.
     """
     unique_freq, indices = np.unique(freq_axis, return_inverse=True)
     data = np.array(
@@ -148,31 +131,26 @@ def combine_non_unique_frequency_axis(freq_axis, data, agg_function=np.max):
     return unique_freq, data
 
 
-def spec_time_to_pd_datetime(start_datetime, time_axis):
-    """
-    Convert a time axis array to pandas datetime objects, offset by a starting datetime.
+def spec_time_to_pd_datetime(
+    start_datetime: datetime | pd.Timestamp, time_axis: np.ndarray
+) -> pd.Timestamp | pd.DatetimeIndex:
+    """Convert a time axis array to pandas datetime objects, offset by a
+    starting datetime.
 
-    Parameters
-    ----------
-    start_datetime : datetime or Timestamp
-        The starting datetime to which the time axis offsets will be applied.
-    time_axis : array_like
-        An array of time offsets in seconds.
+    Parameters ---------- start_datetime : datetime or Timestamp     The
+    starting datetime to which the time axis offsets will be applied. time_axis
+    : array_like     An array of time offsets in seconds.
 
-    Returns
-    -------
-    pandas.Series
-        A pandas Series of datetime objects corresponding to each time offset.
+    Returns ------- pandas.Series     A pandas Series of datetime objects
+    corresponding to each time offset.
 
-    Notes
-    -----
-    This function adds the given time offsets in seconds to the start datetime
-    and converts the result to pandas datetime objects.
+    Notes ----- This function adds the given time offsets in seconds to the
+    start datetime and converts the result to pandas datetime objects.
     """
     return start_datetime + pd.to_timedelta(time_axis, unit="s")
 
 
-def extract_instrument_name(file_path):
+def extract_instrument_name(file_path: str) -> str:
     """Extract the instrument name from a file path.
 
     Parameters
@@ -183,19 +161,24 @@ def extract_instrument_name(file_path):
     Returns
     -------
     str
-        The extracted instrument name, converted to lowercase with underscores in place of hyphens.
+        The extracted instrument name, converted to lowercase with underscores
+        in place of hyphens.
 
 
     Example
     -------
-    >>> extract_instrument_name('/var/lib/ecallisto/2023/01/27/ALASKA-COHOE_20230127_001500_612.fit.gz')
+    >>> extract_instrument_name(
+    ...     '/var/lib/ecallisto/2023/01/27/'
+    ...     'ALASKA-COHOE_20230127_001500_612.fit.gz'
+    ... )
     'ALASKA_COHOE_612'
 
     Notes
     -----
     The function first selects the last part of the file path and removes the extension.
-    Then, it replaces hyphens with underscores and splits on underscores to get the parts of the file name.
-    The function concatenates these parts, adding a numeric part of the file name if it is less than 6 digits.
+    Then, it replaces hyphens with underscores and splits on underscores to get
+    the parts of the file name. The function concatenates these parts, adding a
+    numeric part of the file name if it is less than 6 digits.
     """
     # select last part of file path and remove extension
     file_name = file_path.split("/")[-1].split(".")[0]
@@ -206,19 +189,13 @@ def extract_instrument_name(file_path):
     return instrument_name + "_" + antenna_number
 
 
-def extract_identical_dicts(dicts):
-    """
-    Extract identical keys and values from a list of dictionaries.
+def extract_identical_dicts(dicts: list[dict[str, Any]]) -> dict[str, Any]:
+    """Extract identical keys and values from a list of dictionaries.
 
-    Parameters
-    ----------
-    dicts : list of dict
-        The list of dictionaries to extract identical keys and values from.
+    Parameters ---------- dicts : list of dict     The list of dictionaries to
+    extract identical keys and values from.
 
-    Returns
-    -------
-    dict
-        A dictionary of identical keys and values.
+    Returns ------- dict     A dictionary of identical keys and values.
     """
     identical_keys = set.intersection(*[set(d.keys()) for d in dicts])
     identical_values = {}
@@ -229,30 +206,24 @@ def extract_identical_dicts(dicts):
     return identical_values
 
 
-def readd_edit_header(df, dict_):
-    """
-    Re-add and edit header information to a DataFrame.
+def readd_edit_header(df: pd.DataFrame, dict_: dict[str, Any]) -> pd.DataFrame:
+    """Re-add and edit header information to a DataFrame.
 
-    This function updates the header of a DataFrame with new values and adds additional
-    time-related and instrument information. It preserves the order of the original header keys.
+    This function updates the header of a DataFrame with new values and adds
+    additional time-related and instrument information. It preserves the order
+    of the original header keys.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        DataFrame to which header information will be added or updated.
-    dict_ : dict
-        Dictionary containing header information to be updated or added to `df`.
+    Parameters ---------- df : pandas.DataFrame     DataFrame to which header
+    information will be added or updated. dict_ : dict     Dictionary
+    containing header information to be updated or added to `df`.
 
-    Returns
-    -------
-    pandas.DataFrame
-        The DataFrame with updated header information.
+    Returns ------- pandas.DataFrame     The DataFrame with updated header
+    information.
 
-    Notes
-    -----
-    The function assumes that the DataFrame `df` has an attribute `header`, which is a dictionary
-    used to store header information. The DataFrame's index is used to derive `DATE-OBS`, `TIME-OBS`,
-    `DATE-END`, and `TIME-END` values.
+    Notes ----- The function assumes that the DataFrame `df` has an attribute
+    `header`, which is a dictionary used to store header information. The
+    DataFrame's index is used to derive `DATE-OBS`, `TIME-OBS`, `DATE-END`, and
+    `TIME-END` values.
     """
     for key, value in dict_.items():
         df.attrs[key] = value
@@ -266,24 +237,27 @@ def readd_edit_header(df, dict_):
     return df
 
 
-def concat_dfs_by_instrument(dfs, verbose=False):
-    instruments = {}
+def concat_dfs_by_instrument(
+    dfs: list[pd.DataFrame], verbose: bool = False
+) -> DataFrameByInstrument:
+    grouped_dfs: dict[str, list[pd.DataFrame]] = {}
     # Extract attrs from each df
     headers = [df.attrs for df in dfs]
     if verbose:
         print("Combining headers....")
     for df in dfs:
         instrument = df.attrs["INSTRUME"] + "_" + df.attrs["ANTENNAID"]
-        if instrument not in instruments:
-            instruments[instrument] = []
-        instruments[instrument].append(df)
+        if instrument not in grouped_dfs:
+            grouped_dfs[instrument] = []
+        grouped_dfs[instrument].append(df)
 
     if verbose:
         print("Concatenating dataframes....")
-    for instrument, dfs in instruments.items():
-        headers = [df.attrs for df in dfs]
+    instruments: DataFrameByInstrument = {}
+    for instrument, instrument_dfs in grouped_dfs.items():
+        headers = [df.attrs for df in instrument_dfs]
         identical_headers = extract_identical_dicts(headers)
-        instruments[instrument] = pd.concat(dfs).sort_index()
+        instruments[instrument] = pd.concat(instrument_dfs).sort_index()
         instruments[instrument] = readd_edit_header(
             instruments[instrument], identical_headers
         )
@@ -291,10 +265,11 @@ def concat_dfs_by_instrument(dfs, verbose=False):
     return instruments
 
 
-def masked_spectrogram_to_array(data, freq_axis):
-    """
-    Converts a masked spectrogram to an array by removing all masked values.
-    """
+def masked_spectrogram_to_array(
+    data: np.ndarray | np.ma.MaskedArray, freq_axis: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Converts a masked spectrogram to an array by removing all masked
+    values."""
     # Get row with no masked values
     idxs = np.where(~np.any(np.ma.getmaskarray(data), axis=1))[0]
     # Keep only frequencies with no masked values
@@ -306,29 +281,23 @@ def masked_spectrogram_to_array(data, freq_axis):
     return data, freq_axis
 
 
-def ecallisto_fits_to_pandas(fits_file):
-    """
-    Convert eCallisto FITS data to a pandas DataFrame.
+def ecallisto_fits_to_pandas(fits_file: HDUList) -> pd.DataFrame:
+    """Convert eCallisto FITS data to a pandas DataFrame.
 
-    Parameters
-    ----------
-    fits_file : astropy.io.fits.HDUList
-        An HDUList object representing the FITS file.
+    Parameters ---------- fits_file : astropy.io.fits.HDUList     An HDUList
+    object representing the FITS file.
 
-    Returns
-    -------
-    pandas.DataFrame
-        A DataFrame containing the FITS data with time as index and frequencies as columns.
+    Returns ------- pandas.DataFrame     A DataFrame containing the FITS data
+    with time as index and frequencies as columns.
 
-    Notes
-    -----
-    This function processes eCallisto FITS files, extracting the time axis, frequency axis,
-    and data values. It handles non-unique frequencies by combining them and converts the
-    time axis to pandas datetime objects. FITS header information is added as attributes
-    to the DataFrame.
+    Notes ----- This function processes eCallisto FITS files, extracting the
+    time axis, frequency axis, and data values. It handles non-unique
+    frequencies by combining them and converts the time axis to pandas datetime
+    objects. FITS header information is added as attributes to the DataFrame.
 
-    Non-unique frequency axes are combined using the `combine_non_unique_frequency_axis` function,
-    which is not defined in this snippet and should be provided separately.
+    Non-unique frequency axes are combined using the
+    `combine_non_unique_frequency_axis` function, which is not defined in this
+    snippet and should be provided separately.
     """
     time_axis = fits_file[1].data[0][0]
     freq_axis = fits_file[1].data[0][1]

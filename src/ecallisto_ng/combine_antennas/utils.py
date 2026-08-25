@@ -1,4 +1,5 @@
-from typing import List
+from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -6,19 +7,15 @@ import pandas as pd
 from ecallisto_ng.plotting.utils import fill_missing_timesteps_with_nan
 
 
-def make_times_match_spectrograms(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
-    """
-    Adjusts the time index of the given list of DataFrames to have the same start and end times.
+def make_times_match_spectrograms(dfs: Sequence[pd.DataFrame]) -> list[pd.DataFrame]:
+    """Adjusts the time index of the given list of DataFrames to have the same
+    start and end times.
 
-    Parameters
-    ----------
-    dfs : List[pd.DataFrame]
-        List of DataFrames with datetime index.
+    Parameters ---------- dfs : List[pd.DataFrame]     List of DataFrames with
+    datetime index.
 
-    Returns
-    -------
-    List[pd.DataFrame]
-        List of DataFrames with the adjusted datetime index.
+    Returns ------- List[pd.DataFrame]     List of DataFrames with the adjusted
+    datetime index.
     """
     min_datetime = min([df.index.min() for df in dfs])
     max_datetime = max([df.index.max() for df in dfs])
@@ -33,40 +30,33 @@ def make_times_match_spectrograms(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]
     return new_dfs
 
 
-def interpolate_columns(df: pd.DataFrame, all_columns: List[float]) -> pd.DataFrame:
-    """
-    Interpolates missing columns in a DataFrame.
+def interpolate_columns(
+    df: pd.DataFrame, all_columns: Sequence[float | str]
+) -> pd.DataFrame:
+    """Interpolates missing columns in a DataFrame.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame to interpolate.
-    all_columns : List[float]
-        List of all columns to include in the DataFrame.
+    Parameters ---------- df : pd.DataFrame     DataFrame to interpolate.
+    all_columns : List[float]     List of all columns to include in the
+    DataFrame.
 
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with interpolated values.
+    Returns ------- pd.DataFrame     DataFrame with interpolated values.
     """
     df = df.reindex(columns=all_columns)
     df.interpolate(method="linear", axis=1, inplace=True, limit_area="inside")
     return df
 
 
-def make_frequencies_match_spectrograms(dfs: List[pd.DataFrame]) -> List[pd.DataFrame]:
-    """
-    Makes frequency columns across multiple spectrogram DataFrames consistent.
+def make_frequencies_match_spectrograms(
+    dfs: Sequence[pd.DataFrame],
+) -> list[pd.DataFrame]:
+    """Makes frequency columns across multiple spectrogram DataFrames
+    consistent.
 
-    Parameters
-    ----------
-    dfs : List[pd.DataFrame]
-        List of spectrogram DataFrames.
+    Parameters ---------- dfs : List[pd.DataFrame]     List of spectrogram
+    DataFrames.
 
-    Returns
-    -------
-    List[pd.DataFrame]
-        List of DataFrames with matching frequency columns.
+    Returns ------- List[pd.DataFrame]     List of DataFrames with matching
+    frequency columns.
     """
     all_columns = sorted(list(set(float(col) for df in dfs for col in df.columns)))
     all_columns = [str(col) for col in all_columns]
@@ -74,21 +64,15 @@ def make_frequencies_match_spectrograms(dfs: List[pd.DataFrame]) -> List[pd.Data
     return new_dfs
 
 
-def get_max_cross_corr_shift(spec1, spec2):
-    """
-    Get the shift amount that maximizes the cross-correlation between two spectrograms.
+def get_max_cross_corr_shift(spec1: pd.DataFrame, spec2: pd.DataFrame) -> int:
+    """Get the shift amount that maximizes the cross-correlation between two
+    spectrograms.
 
-    Parameters
-    ----------
-    spec1 : np.array
-        First spectrogram.
-    spec2 : np.array
-        Second spectrogram.
+    Parameters ---------- spec1 : np.array     First spectrogram. spec2 :
+    np.array     Second spectrogram.
 
-    Returns
-    -------
-    int
-        Shift amount for the second spectrogram that maximizes the cross-correlation.
+    Returns ------- int     Shift amount for the second spectrogram that
+    maximizes the cross-correlation.
     """
     cross_corr = np.correlate(
         spec1.sum(axis=1).values, spec2.sum(axis=1).values, mode="full"
@@ -96,19 +80,12 @@ def get_max_cross_corr_shift(spec1, spec2):
     return cross_corr.argmax() - (len(spec1) - 1)
 
 
-def get_cross_corr_matrix(specs: List[pd.DataFrame]) -> np.ndarray:
-    """
-    Get the cross-correlation matrix between a list of spectrograms.
+def get_cross_corr_matrix(specs: Sequence[pd.DataFrame]) -> np.ndarray:
+    """Get the cross-correlation matrix between a list of spectrograms.
 
-    Parameters
-    ----------
-    specs : List[pd.DataFrame]
-        List of spectrograms.
+    Parameters ---------- specs : List[pd.DataFrame]     List of spectrograms.
 
-    Returns
-    -------
-    torch.Tensor
-        Cross-correlation matrix.
+    Returns ------- torch.Tensor     Cross-correlation matrix.
     """
     n_specs = len(specs)
     cross_corr_matrix = np.zeros((n_specs, n_specs))
@@ -120,58 +97,42 @@ def get_cross_corr_matrix(specs: List[pd.DataFrame]) -> np.ndarray:
     return cross_corr_matrix
 
 
-def find_best_reference(cross_corr_matrix):
-    """
-    Find the best reference spectrogram based on the minimum sum of shifts.
+def find_best_reference(cross_corr_matrix: np.ndarray) -> np.integer:
+    """Find the best reference spectrogram based on the minimum sum of shifts.
 
-    Parameters
-    ----------
-    cross_corr_matrix : np.ndarray
-        Cross-correlation matrix.
+    Parameters ---------- cross_corr_matrix : np.ndarray     Cross-correlation
+    matrix.
 
-    Returns
-    -------
-    int
-        Index of the best reference spectrogram.
+    Returns ------- int     Index of the best reference spectrogram.
     """
     abs_sum_shifts = np.sum(np.abs(cross_corr_matrix), axis=1)
     return abs_sum_shifts.argmin()
 
 
-def align_to_reference(cross_corr_matrix):
-    """
-    Align all spectrograms to the best reference based on the cross-correlation matrix.
+def align_to_reference(cross_corr_matrix: np.ndarray) -> tuple[np.integer, np.ndarray]:
+    """Align all spectrograms to the best reference based on the cross-
+    correlation matrix.
 
-    Parameters
-    ----------
-    cross_corr_matrix : torch.Tensor
-        Cross-correlation matrix.
+    Parameters ---------- cross_corr_matrix : torch.Tensor     Cross-
+    correlation matrix.
 
-    Returns
-    -------
-    int, torch.Tensor
-        Index of reference and shifts needed to align to the reference.
+    Returns ------- int, torch.Tensor     Index of reference and shifts needed
+    to align to the reference.
     """
     ref_idx = find_best_reference(cross_corr_matrix)
     shifts_to_ref = cross_corr_matrix[ref_idx]
     return ref_idx, shifts_to_ref
 
 
-def shift_spectrograms(spec_list, shifts):
-    """
-    Shift spectrograms based on the given shifts.
+def shift_spectrograms(
+    spec_list: Sequence[pd.DataFrame], shifts: Sequence[float] | np.ndarray
+) -> list[pd.DataFrame]:
+    """Shift spectrograms based on the given shifts.
 
-    Parameters
-    ----------
-    spec_list : list of pd.DataFrame
-        List of spectrograms.
-    shifts : np.ndarray
-        Shift amounts for each spectrogram.
+    Parameters ---------- spec_list : list of pd.DataFrame     List of
+    spectrograms. shifts : np.ndarray     Shift amounts for each spectrogram.
 
-    Returns
-    -------
-    list of torch.Tensor
-        List of shifted spectrograms.
+    Returns ------- list of torch.Tensor     List of shifted spectrograms.
     """
     shifted_spectrograms = []
     for shift_, spec in zip(shifts, spec_list):
@@ -180,25 +141,24 @@ def shift_spectrograms(spec_list, shifts):
     return shifted_spectrograms
 
 
-def round_frequencies_to_nearest_bin(dfs, bin_size, method="rebin"):
-    """
-    Rounds each frequency column in multiple DataFrames to the nearest bin edge and groups them.
-    This is so that the frequencies are consistent across multiple DataFrames and we don't
-    have to deal with a huge number of columns.
+def round_frequencies_to_nearest_bin(
+    dfs: Sequence[pd.DataFrame],
+    bin_size: float,
+    method: Literal["round", "rebin"] = "rebin",
+) -> list[pd.DataFrame]:
+    """Rounds each frequency column in multiple DataFrames to the nearest bin
+    edge and groups them. This is so that the frequencies are consistent across
+    multiple DataFrames and we don't have to deal with a huge number of
+    columns.
 
-    Parameters
-    ----------
-    dfs : list of pandas.DataFrame
-        List of DataFrames containing the spectrograms. Columns in each DataFrame are frequencies.
-    bin_size : float
-        The size of the frequency bins.
-    method : str, optional
-        The method used for rounding. Either by rebinning or by rounding to the nearest bin edge.
+    Parameters ---------- dfs : list of pandas.DataFrame     List of DataFrames
+    containing the spectrograms. Columns in each DataFrame are frequencies.
+    bin_size : float     The size of the frequency bins. method : str, optional
+    The method used for rounding. Either by rebinning or by rounding to the
+    nearest bin edge.
 
-    Returns
-    -------
-    list of pandas.DataFrame
-        New list of DataFrames with binned frequencies.
+    Returns ------- list of pandas.DataFrame     New list of DataFrames with
+    binned frequencies.
     """
     rounded_dfs = []
     for df in dfs:
@@ -211,23 +171,15 @@ def round_frequencies_to_nearest_bin(dfs, bin_size, method="rebin"):
     return rounded_dfs
 
 
-def round_col_to_nearest_bin(df, bin_size):
+def round_col_to_nearest_bin(df: pd.DataFrame, bin_size: float) -> pd.DataFrame:
+    """Rounds each frequency column to the nearest bin edge and groups them.
+
+    Parameters ---------- df : pandas.DataFrame     The DataFrame containing
+    the spectrogram. Columns are frequencies. bin_size : float     The size of
+    the frequency bins.
+
+    Returns ------- pandas.DataFrame     New DataFrame with binned frequencies.
     """
-    Rounds each frequency column to the nearest bin edge and groups them.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        The DataFrame containing the spectrogram. Columns are frequencies.
-    bin_size : float
-        The size of the frequency bins.
-
-    Returns
-    -------
-    pandas.DataFrame
-        New DataFrame with binned frequencies.
-    """
-
     # Cast column labels to float, round them, then cast back to str
     rounded_columns = np.round(df.columns.astype(float) / bin_size) * bin_size
     rounded_columns = np.round(rounded_columns, 1)
@@ -237,17 +189,18 @@ def round_col_to_nearest_bin(df, bin_size):
     return df.T.groupby(df.columns).mean().T
 
 
-def compute_weights(old_freqs, new_freqs, new_res):
-    """
-    Vectorized computation of weights for each old frequency based on their overlap with the new frequency bins.
+def compute_weights(
+    old_freqs: np.ndarray, new_freqs: np.ndarray, new_res: float
+) -> np.ndarray:
+    """Vectorized computation of weights for each old frequency based on their
+    overlap with the new frequency bins.
 
-    Parameters:
-    old_freqs (np.array): Array of old frequency values.
-    new_freqs (np.array): Array of new frequency bin values.
-    new_res (float): New resolution.
+    Parameters: old_freqs (np.array): Array of old frequency values. new_freqs
+    (np.array): Array of new frequency bin values. new_res (float): New
+    resolution.
 
-    Returns:
-    np.array: 2D array of weights for each old frequency against each new frequency.
+    Returns: np.array: 2D array of weights for each old frequency against each
+    new frequency.
     """
     # Calculate the boundaries of each old frequency bin
     left_bounds = np.zeros_like(old_freqs)
@@ -270,20 +223,17 @@ def compute_weights(old_freqs, new_freqs, new_res):
     return overlaps
 
 
-def round_to_nearest(x, base):
+def round_to_nearest(x: float, base: float) -> float:
     return base * round(x / base)
 
 
-def rebin_dataframe(df, new_res):
-    """
-    Optimized rebinning of DataFrame using vectorized operations.
+def rebin_dataframe(df: pd.DataFrame, new_res: float) -> pd.DataFrame:
+    """Optimized rebinning of DataFrame using vectorized operations.
 
-    Parameters:
-    df (pd.DataFrame): DataFrame with datetime index and frequency columns.
-    new_res (float): New resolution.
+    Parameters: df (pd.DataFrame): DataFrame with datetime index and frequency
+    columns. new_res (float): New resolution.
 
-    Returns:
-    pd.DataFrame: Rebinned DataFrame.
+    Returns: pd.DataFrame: Rebinned DataFrame.
     """
     old_freqs = np.round(np.array(df.columns, dtype=np.float64), 5)
 

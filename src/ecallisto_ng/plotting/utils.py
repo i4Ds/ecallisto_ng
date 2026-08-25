@@ -1,8 +1,16 @@
+from typing import Literal
+
 import numpy as np
 import pandas as pd
 
 
-def downcast_resolution(df, start_datetime, end_datetime, resolution, sampling_method):
+def downcast_resolution(
+    df: pd.DataFrame,
+    start_datetime: pd.Timestamp,
+    end_datetime: pd.Timestamp,
+    resolution: int,
+    sampling_method: Literal["mean", "max", "min"] | str,
+) -> pd.DataFrame:
     # Calculate resampling frequency
     resample_freq = calculate_resample_freq(start_datetime, end_datetime, resolution)
     resample_freq = max(resample_freq, pd.Timedelta(milliseconds=250))
@@ -12,7 +20,11 @@ def downcast_resolution(df, start_datetime, end_datetime, resolution, sampling_m
     return df
 
 
-def downcast_timedelta(df, resample_timedelta, sampling_method):
+def downcast_timedelta(
+    df: pd.DataFrame,
+    resample_timedelta: pd.Timedelta,
+    sampling_method: Literal["mean", "max", "min"] | str,
+) -> pd.DataFrame:
     # Resample data
     if sampling_method.lower() == "mean":
         df = df.resample(resample_timedelta).mean()
@@ -24,12 +36,14 @@ def downcast_timedelta(df, resample_timedelta, sampling_method):
     return df
 
 
-def calculate_resample_freq(start_datetime, end_datetime, resolution):
+def calculate_resample_freq(
+    start_datetime: pd.Timestamp, end_datetime: pd.Timestamp, resolution: int
+) -> pd.Timedelta:
     tota_time_delta = end_datetime - start_datetime
     return tota_time_delta / (resolution - 1)
 
 
-def return_strftime_based_on_range(time_range):
+def return_strftime_based_on_range(time_range: pd.Timedelta) -> str:
     # Decide on the date-time format based on the time range
     if time_range > pd.Timedelta(days=1):
         date_format = "%Y-%m-%d"
@@ -41,7 +55,7 @@ def return_strftime_based_on_range(time_range):
     return date_format
 
 
-def return_strftime_for_ticks_based_on_range(time_range):
+def return_strftime_for_ticks_based_on_range(time_range: pd.Timedelta) -> str:
     # Decide on the date-time format based on the time range
     if time_range < pd.Timedelta(days=1):
         date_format = "%H:%M:%S"
@@ -53,21 +67,28 @@ def return_strftime_for_ticks_based_on_range(time_range):
     return date_format
 
 
-def fill_missing_timesteps_with_nan(df, start_datetime=None, end_datetime=None):
+def fill_missing_timesteps_with_nan(
+    df: pd.DataFrame,
+    start_datetime: pd.Timestamp | str | None = None,
+    end_datetime: pd.Timestamp | str | None = None,
+) -> pd.DataFrame:
     """
-    Fill missing timesteps in a pandas DataFrame with NaN values. Only needed for plotting.
+        Fill missing timesteps in a pandas DataFrame with NaN values. Only
+        needed for plotting.
 
     Parameters
     ----------
     df : pandas.DataFrame
         The DataFrame to fill missing timesteps in.
     start_datetime : str or pandas.Timestamp, optional
-        If you want to make sure that the returned DataFrame starts at a specific datetime,
-        you can specify it here. If not specified, the returned DataFrame will start at the
+            If you want to make sure that the returned DataFrame starts at a
+            specific datetime, you can specify it here. If not specified, the
+            returned DataFrame will start at the
         first datetime in the input DataFrame.
     end_datetime : str or pandas.Timestamp, optional
-        If you want to make sure that the returned DataFrame ends at a specific datetime,
-        you can specify it here. If not specified, the returned DataFrame will end at the
+            If you want to make sure that the returned DataFrame ends at a
+            specific datetime, you can specify it here. If not specified, the
+            returned DataFrame will end at the
         last datetime in the input DataFrame.
 
     Returns
@@ -77,11 +98,13 @@ def fill_missing_timesteps_with_nan(df, start_datetime=None, end_datetime=None):
 
     Notes
     -----
-    This function is useful when working with time-series data that has missing timesteps.
-    By filling the missing timesteps with NaN values, the DataFrame can be easily visualized
+        This function is useful when working with time-series data that has
+        missing timesteps. By filling the missing timesteps with NaN values,
+        the DataFrame can be easily visualized
     or analyzed without introducing errors due to missing data.
 
-    The function calculates the median time delta of the input DataFrame, and then creates
+        The function calculates the median time delta of the input DataFrame,
+        and then creates
     a new index with evenly spaced values based on that delta. It then uses the pandas
     `reindex` function to fill in missing timesteps with NaN values.
 

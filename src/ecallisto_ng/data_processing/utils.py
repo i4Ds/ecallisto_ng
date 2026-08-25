@@ -1,9 +1,10 @@
+from typing import Any, Literal
+
 import numpy as np
 import pandas as pd
 import scipy.signal
-from scipy.ndimage import median_filter
+from scipy.ndimage import generic_filter, median_filter
 from skimage import filters
-from scipy.ndimage import generic_filter
 
 
 def calculate_snr(data: pd.DataFrame, window: int = 5) -> np.float64:
@@ -13,14 +14,13 @@ def calculate_snr(data: pd.DataFrame, window: int = 5) -> np.float64:
 
 
 def min_max_scale_per_column(data: pd.DataFrame) -> pd.DataFrame:
-    """
-    Apply min-max scaling to each column of a DataFrame.
+    """Apply min-max scaling to each column of a DataFrame.
 
-    Parameters:
-    data (pd.DataFrame): The input data with columns representing different frequencies.
+    Parameters: data (pd.DataFrame): The input data with columns representing
+    different frequencies.
 
-    Returns:
-    pd.DataFrame: The scaled data where each column is scaled independently.
+    Returns: pd.DataFrame: The scaled data where each column is scaled
+    independently.
     """
     # Ensuring the data is a DataFrame
     if not isinstance(data, pd.DataFrame):
@@ -32,26 +32,20 @@ def min_max_scale_per_column(data: pd.DataFrame) -> pd.DataFrame:
     return scaled_data
 
 
-def apply_quantile_filter(df, quantile_value, size=(3, 3)):
-    """
-    Apply quantile filter to a DataFrame.
+def apply_quantile_filter(
+    df: pd.DataFrame, quantile_value: float, size: tuple[int, int] = (3, 3)
+) -> pd.DataFrame:
+    """Apply quantile filter to a DataFrame.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame to filter.
-    quantile_value : float
-        Quantile value to use for filtering (between 0 and 1).
-    size : tuple of int, optional
-        Dimensions of the filter kernel. Default is (3, 3).
+    Parameters ---------- df : pd.DataFrame     Input DataFrame to filter.
+    quantile_value : float     Quantile value to use for filtering (between 0
+    and 1). size : tuple of int, optional     Dimensions of the filter kernel.
+    Default is (3, 3).
 
-    Returns
-    -------
-    pd.DataFrame
-        Filtered DataFrame.
+    Returns ------- pd.DataFrame     Filtered DataFrame.
     """
 
-    def quantile_func(values):
+    def quantile_func(values: np.ndarray) -> np.floating:
         return np.quantile(values, quantile_value)
 
     data = generic_filter(df.values, quantile_func, size=size, mode="reflect")
@@ -59,21 +53,16 @@ def apply_quantile_filter(df, quantile_value, size=(3, 3)):
     return df
 
 
-def mean_filter(df, kernel_size=(5, 5)):
-    """
-    Apply mean filter to a DataFrame using a 2D convolution.
+def mean_filter(
+    df: pd.DataFrame, kernel_size: tuple[int, int] = (5, 5)
+) -> pd.DataFrame:
+    """Apply mean filter to a DataFrame using a 2D convolution.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame to filter.
-    kernel_size : tuple of int, optional
-        Dimensions of the filter kernel. Default is (5, 5).
+    Parameters ---------- df : pd.DataFrame     Input DataFrame to filter.
+    kernel_size : tuple of int, optional     Dimensions of the filter kernel.
+    Default is (5, 5).
 
-    Returns
-    -------
-    pd.DataFrame
-        Filtered DataFrame.
+    Returns ------- pd.DataFrame     Filtered DataFrame.
     """
     kernel = np.ones(kernel_size) / (kernel_size[0] * kernel_size[1])
     data = scipy.signal.convolve2d(df.to_numpy(), kernel, "same")
@@ -81,28 +70,23 @@ def mean_filter(df, kernel_size=(5, 5)):
     return df
 
 
-def apply_median_filter(df, size=(3, 3)):
-    """
-    Apply median filter to a DataFrame.
+def apply_median_filter(
+    df: pd.DataFrame, size: tuple[int, int] = (3, 3)
+) -> pd.DataFrame:
+    """Apply median filter to a DataFrame.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame to filter.
-    size : tuple of int, optional
-        Dimensions of the filter kernel. Default is (3, 3).
+    Parameters ---------- df : pd.DataFrame     Input DataFrame to filter. size
+    : tuple of int, optional     Dimensions of the filter kernel. Default is
+    (3, 3).
 
-    Returns
-    -------
-    pd.DataFrame
-        Filtered DataFrame.
+    Returns ------- pd.DataFrame     Filtered DataFrame.
     """
     data = median_filter(df.values, size)
     df.values[:] = data
     return df
 
 
-def return_strftime_based_on_range(time_range):
+def return_strftime_based_on_range(time_range: pd.Timedelta) -> str:
     # Decide on the date-time format based on the time range
     if time_range < pd.Timedelta(days=1):
         date_format = "%H:%M:%S"
@@ -115,43 +99,39 @@ def return_strftime_based_on_range(time_range):
 
 
 def elimwrongchannels(
-    df,
-    channel_std_mult=5,
-    jump_std_mult=2,
-    nan_interpolation_method="pchip",
-    interpolate_created_nans=True,
-    verbose=False,
-):
-    """
-    Remove Radio Frequency Interference (RFI) from a spectrogram represented by a pandas DataFrame.
-    This function works even when there is missing data thanks to interpolation of missing values.
-    However, it could lead to some false or different results.
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Input DataFrame where the index represents time and the columns represent frequency channels.
-    channel_std_mult : float, optional
-        Multiplicative factor for the standard deviation threshold used in the first RFI elimination step.
-        Channels with standard deviation less than this threshold times the mean standard deviation across all channels are retained.
-        Default is 5.
-    jump_std_mult : float, optional
-        Multiplicative factor for the standard deviation threshold used in the second RFI elimination step which deals with sharp jumps between channels.
-        Channels with the absolute difference from the mean value less than this threshold times the standard deviation of differences are retained.
-        Default is 2.
-    nan_interpolation_method : str, optional
-        Interpolation method to use for missing values. See pandas.DataFrame.interpolate for more details.
-        Default is "pchip".
-    interpolate_created_nans : bool, optional
-        Whether to interpolate NaNs created by the first RFI elimination step.
-        Default is True.
-    verbose : bool, optional
-        Whether to print out the number of eliminated channels.
+    df: pd.DataFrame,
+    channel_std_mult: float = 5,
+    jump_std_mult: float = 2,
+    nan_interpolation_method: str = "pchip",
+    interpolate_created_nans: bool = True,
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """Remove Radio Frequency Interference (RFI) from a spectrogram represented
+    by a pandas DataFrame. This function works even when there is missing data
+    thanks to interpolation of missing values. However, it could lead to some
+    false or different results.
 
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame with RFI removed. The DataFrame is oriented in the same way as the input DataFrame (time on index and frequency on columns).
+    Parameters ---------- df : pandas.DataFrame     Input DataFrame where the
+    index represents time and the columns represent frequency channels.
+    channel_std_mult : float, optional     Multiplicative factor for the
+    standard deviation threshold used in the first RFI elimination step.
+    Channels with standard deviation less than this threshold times the mean
+    standard deviation across all channels are retained.     Default is 5.
+    jump_std_mult : float, optional     Multiplicative factor for the standard
+    deviation threshold used in the second RFI elimination step which deals
+    with sharp jumps between channels.     Channels with the absolute
+    difference from the mean value less than this threshold times the standard
+    deviation of differences are retained.     Default is 2.
+    nan_interpolation_method : str, optional     Interpolation method to use
+    for missing values. See pandas.DataFrame.interpolate for more details.
+    Default is "pchip". interpolate_created_nans : bool, optional     Whether
+    to interpolate NaNs created by the first RFI elimination step.     Default
+    is True. verbose : bool, optional     Whether to print out the number of
+    eliminated channels.
 
+    Returns ------- pandas.DataFrame     DataFrame with RFI removed. The
+    DataFrame is oriented in the same way as the input DataFrame (time on index
+    and frequency on columns).
     """
     df = df.copy()
 
@@ -217,59 +197,56 @@ def elimwrongchannels(
     return df
 
 
-def subtract_constant_background(df, n=300):
-    """
-    Subtract a constant background from a spectrogram represented by a pandas DataFrame.
+def subtract_constant_background(df: pd.DataFrame, n: int = 300) -> pd.DataFrame:
+    """Subtract a constant background from a spectrogram represented by a
+    pandas DataFrame.
 
-    The constant background is defined as the median value of the first n rows (timepoints) of the DataFrame.
+    The constant background is defined as the median value of the first n rows
+    (timepoints) of the DataFrame.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Input DataFrame where the index represents time and the columns represent frequency channels.
-    n : int
-        Number of first rows from which the median value is calculated to define the constant background.
+    Parameters ---------- df : pandas.DataFrame     Input DataFrame where the
+    index represents time and the columns represent frequency channels. n : int
+    Number of first rows from which the median value is calculated to define
+    the constant background.
 
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame with the constant background subtracted. The DataFrame is oriented in the same way as the input DataFrame (time on index and frequency on columns).
-
+    Returns ------- pandas.DataFrame     DataFrame with the constant background
+    subtracted. The DataFrame is oriented in the same way as the input
+    DataFrame (time on index and frequency on columns).
     """
     df = df.copy()
     return df - df.iloc[0:n].median()
 
 
 def subtract_rolling_background(
-    df, window=30, center=False, how="quantile", quantile_value=0.05, **kwargs
-):
-    """
-    Subtract a rolling background from a spectrogram represented by a pandas DataFrame.
+    df: pd.DataFrame,
+    window: int = 30,
+    center: bool = False,
+    how: Literal["median", "quantile"] = "quantile",
+    quantile_value: float = 0.05,
+    **kwargs: Any,
+) -> pd.DataFrame:
+    """Subtract a rolling background from a spectrogram represented by a pandas
+    DataFrame.
 
-    The rolling background is calculated either as the median or a specific quantile value of each rolling window of size `window`.
+    The rolling background is calculated either as the median or a specific
+    quantile value of each rolling window of size `window`.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Input DataFrame where the index represents time and the columns represent frequency channels.
-    window : int, default 30
-        Size of the rolling window from which the background value is calculated.
-    center : bool, default False
-        If True, the rolling window is centered on the current timepoint. If False, the rolling window starts at the current timepoint.
-        See pandas.DataFrame.rolling for more details.
-    how : str, default "quantile"
-        Method to calculate the rolling background. If "median", the median value of the window is used.
-        If "quantile", the quantile defined by `quantile_value` is used.
-    quantile_value : float, default 0.5
-        The quantile value to use when `how` is "quantile". Ignored if `how` is not "quantile".
-    **kwargs : dict
-        Additional keyword arguments passed to pandas.DataFrame.rolling.
+    Parameters ---------- df : pandas.DataFrame     Input DataFrame where the
+    index represents time and the columns represent frequency channels. window
+    : int, default 30     Size of the rolling window from which the background
+    value is calculated. center : bool, default False     If True, the rolling
+    window is centered on the current timepoint. If False, the rolling window
+    starts at the current timepoint.     See pandas.DataFrame.rolling for more
+    details. how : str, default "quantile"     Method to calculate the rolling
+    background. If "median", the median value of the window is used.     If
+    "quantile", the quantile defined by `quantile_value` is used.
+    quantile_value : float, default 0.5     The quantile value to use when
+    `how` is "quantile". Ignored if `how` is not "quantile". **kwargs : dict
+    Additional keyword arguments passed to pandas.DataFrame.rolling.
 
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame with the rolling background subtracted. The DataFrame is oriented in the same way as the input DataFrame (time on index and frequency on columns).
-
+    Returns ------- pandas.DataFrame     DataFrame with the rolling background
+    subtracted. The DataFrame is oriented in the same way as the input
+    DataFrame (time on index and frequency on columns).
     """
     df = df.copy()
     if how == "median":
@@ -283,17 +260,18 @@ def subtract_rolling_background(
     return df - df_rolling
 
 
-def subtract_low_signal_noise_background(df, percentile=0.05):
-    """
-    Background subtraction method adapted for DataFrame.
-    The average and the standard deviation of each row will be calculated and subtracted from the DataFrame.
+def subtract_low_signal_noise_background(
+    df: pd.DataFrame, percentile: float = 0.05
+) -> pd.DataFrame:
+    """Background subtraction method adapted for DataFrame.
 
-    Parameters
-    ----------
-    df : DataFrame
-        DataFrame representing the spectrogram with time as index and frequencies as columns.
-    percentile : float, default 0.05
-        Percentile of the lowest standard deviations to use as background.
+    The average and the standard deviation of each row will be calculated and
+    subtracted from the DataFrame.
+
+    Parameters ---------- df : DataFrame     DataFrame representing the
+    spectrogram with time as index and frequencies as columns. percentile :
+    float, default 0.05     Percentile of the lowest standard deviations to use
+    as background.
     """
     df_ = df.copy()
 
@@ -304,7 +282,8 @@ def subtract_low_signal_noise_background(df, percentile=0.05):
     # Calculate standard deviation for each column (frequency bin)
     column_sdevs = df_.std(axis=1)
 
-    # Select columns (frequency bins) with the lowest standard deviations (assumed background)
+    # Select columns (frequency bins) with the lowest standard deviations
+    # (assumed background)
     n_columns = len(column_sdevs)
     n_background = int(n_columns * percentile)
     background_cols = column_sdevs.nsmallest(n_background).index
@@ -314,7 +293,7 @@ def subtract_low_signal_noise_background(df, percentile=0.05):
     return df - background
 
 
-def intensity_to_linear(df, factor=0.0386):
+def intensity_to_linear(df: pd.DataFrame, factor: float = 0.0386) -> pd.DataFrame:
     """
     Convert Callisto values (W) and make them linear.
     Based on the following forumla:
@@ -330,7 +309,7 @@ def intensity_to_linear(df, factor=0.0386):
     return 10 ** (df * factor)
 
 
-def linear_to_intensity(df, factor=0.0386):
+def linear_to_intensity(df: pd.DataFrame, factor: float = 0.0386) -> pd.DataFrame:
     """
     Convert db (I) back to Callisto values (W).
     Based on the following forumla:
