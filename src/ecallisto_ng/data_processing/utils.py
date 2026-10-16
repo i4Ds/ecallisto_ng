@@ -263,34 +263,56 @@ def subtract_rolling_background(
 def subtract_low_signal_noise_background(
     df: pd.DataFrame, percentile: float = 0.05
 ) -> pd.DataFrame:
-    """Background subtraction method adapted for DataFrame.
+    """Constant background subtraction from the quietest time samples.
 
-    The average and the standard deviation of each row will be calculated and
-    subtracted from the DataFrame.
+    DataFrame port of the IDL / radiospectra ``constbacksub`` algorithm:
 
-    Parameters ---------- df : DataFrame     DataFrame representing the
-    spectrogram with time as index and frequencies as columns. percentile :
-    float, default 0.05     Percentile of the lowest standard deviations to use
-    as background.
+    1. Subtract each frequency channel's mean over time.
+    2. For each time sample, compute the standard deviation across frequency
+       of the mean-subtracted data.
+    3. Select the ``int(n_times * percentile) + 1`` time samples with the
+       lowest standard deviation (the "quiet" part of the observation).
+    4. The background is the per-channel mean of the mean-subtracted data over
+       those selected time samples.
+    5. Return the mean-subtracted data minus the background, which equals the
+       original data minus the per-channel mean over the selected samples.
+
+    The ``+ 1`` in step 3 is kept for exact parity with the original
+    implementation; it also guarantees at least one sample is selected.
+
+    NaNs follow pandas semantics: means and standard deviations skip NaNs,
+    time samples whose standard deviation is NaN are never selected, and NaN
+    entries stay NaN in the output.
+
+    Parameters
+    ----------
+    df : DataFrame
+        DataFrame representing the spectrogram with time as index and
+        frequencies as columns.
+    percentile : float, default 0.05
+        Fraction of time samples with the lowest standard deviation across
+        frequency to use as background.
+
+    Returns
+    -------
+    DataFrame
+        Background-subtracted DataFrame with the same index and columns.
     """
-    df_ = df.copy()
+    # Subtract the average of each column (frequency channel) over time
+    df_ = df - df.mean(axis=0)
 
-    # Subtract the average of each row (time point) from that row
-    row_averages = df_.mean(axis=1)
-    df_ = df_.sub(row_averages, axis=0)
+    # Standard deviation across frequency for each row (time sample);
+    # ddof=0 as in numpy.std used by the original implementation
+    time_sdevs = df_.std(axis=1, ddof=0)
 
-    # Calculate standard deviation for each column (frequency bin)
-    column_sdevs = df_.std(axis=1)
+    # Select the time samples with the lowest standard deviations (assumed
+    # background). Work with positions so duplicate timestamps are harmless.
+    n_background = int(len(time_sdevs) * percentile) + 1
+    quiet_rows = time_sdevs.reset_index(drop=True).nsmallest(n_background).index
+    background = df_.iloc[quiet_rows].mean(axis=0)
 
-    # Select columns (frequency bins) with the lowest standard deviations
-    # (assumed background)
-    n_columns = len(column_sdevs)
-    n_background = int(n_columns * percentile)
-    background_cols = column_sdevs.nsmallest(n_background).index
-    background = df_.loc[background_cols].mean()
-
-    # Subtract this background from each column of the DataFrame
-    return df - background
+    # Subtract this background from each time sample of the DataFrame
+    return df_ - background
 
 
 def intensity_to_linear(df: pd.DataFrame, factor: float = 0.0386) -> pd.DataFrame:
