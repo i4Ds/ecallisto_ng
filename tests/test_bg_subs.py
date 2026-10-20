@@ -45,12 +45,12 @@ def _constbacksub_reference(im):
 def synthetic_spectrogram():
     rng = np.random.default_rng(42)
     n_time, n_freq = 400, 50
-    # Strong frequency-dependent bandpass plus noise everywhere
-    bandpass = np.linspace(100.0, 200.0, n_freq)
-    data = bandpass[None, :] + rng.normal(0.0, 5.0, size=(n_time, n_freq))
+    # Strong frequency-dependent channel levels plus noise everywhere
+    channel_levels = np.linspace(100.0, 200.0, n_freq)
+    data = channel_levels[None, :] + rng.normal(0.0, 5.0, size=(n_time, n_freq))
     # Known quiet period with much lower noise
     quiet = slice(100, 130)
-    data[quiet] = bandpass[None, :] + rng.normal(0.0, 0.1, size=(30, n_freq))
+    data[quiet] = channel_levels[None, :] + rng.normal(0.0, 0.1, size=(30, n_freq))
     # A broadband burst that must not end up in the background
     data[250:300] += np.linspace(0.0, 80.0, n_freq)[None, :]
     index = pd.date_range("2024-01-01", periods=n_time, freq="250ms")
