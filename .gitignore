@@ -161,6 +161,8 @@ cython_debug/
 ecallisto_ng_cache/*
 example/ecallisto_ng_cache/*
 *fit.gz
+# Small sample observations used by the example notebooks
+!example/data/*.fit.gz
 data/*.parquet
 combination_of_signals.ipynb
 combination_of_signals_download.ipynb

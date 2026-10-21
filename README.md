@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/663398161.svg)](https://doi.org/10.5281/zenodo.14505851)
 
 # Ecallisto NG 
-Ecallisto NG is a comprehensive Python package tailored for interacting with Ecallisto data. It focuses on facilitating efficient data manipulation, processing, and visualization, leveraging the power of Pandas for data handling and PyTorch for advanced computations. The package is particularly optimized for dealing with large datasets, providing tools for slicing, filtering, and resampling data to make spectrogram plotting more manageable.
+Ecallisto NG is a comprehensive Python package tailored for interacting with e-Callisto data. It focuses on facilitating efficient data manipulation, processing, and visualization, leveraging the power of Pandas for data handling and PyTorch for advanced computations. The package is particularly optimized for dealing with large datasets, providing tools for slicing, filtering, and resampling data to make spectrogram plotting more manageable.
 
 ## Table of Contents
 - [Background](#background)
@@ -23,15 +23,15 @@ Ecallisto NG is a comprehensive Python package tailored for interacting with Eca
 The package is built with Python 3.9<3.13 and primarily uses the Pandas library for data manipulation. It's core functionality is centered around efficient data processing and visualization. The data provided by e-Callisto is stored in a pandas Dataframe, where the index is the time and the column names are the observed frequencies.
 
 ## PyPI
-Available on PyPI: https://pypi.org/project/ecallisto-ng/
+Available on PyPI: https://pypi.org/project/isto-ng/
 
 ## Installation
 To install this package, use pip for installation. Execute the following command in your terminal with basic functionality, such as plotting and data fetching:
-```pip install ecallisto-ng```
+```pip install isto-ng```
 If you want to use the virtual antenna:
-```pip install ecallisto-ng[va]```
+```pip install isto-ng[va]```
 If you want to use the detection of flares, powered by ML:
-```pip install ecallisto-ng[ml]```
+```pip install isto-ng[ml]```
 
 To use the notebook, please install the notebook dependencies.
 
@@ -42,15 +42,15 @@ Of course, you can also install the package from source. To do so, clone the rep
 ```pip install -e .[ml]```
 
 ## Pandas
-Pandas is an open-source data analysis and manipulation tool, pivotal to Ecallisto NG. Learning Pandas is essential for effectively using Ecallisto NG, as it allows for sophisticated data slicing, filtering, and aggregation. More on Pandas: https://pandas.pydata.org/docs/
+Pandas is an open-source data analysis and manipulation tool, pivotal to isto NG. Learning Pandas is essential for effectively using isto NG, as it allows for sophisticated data slicing, filtering, and aggregation. More on Pandas: https://pandas.pydata.org/docs/
 
 ## Examples and Usage
 Please have a look at the jupyter notebook under `example`.
 
 # Getting data
-## `get_ecallisto_data` Function
+## `get_isto_data` Function
 
-This function fetches e-Callisto data within a specified date range and optional instrument regex pattern. It's suitable for smaller datasets. For larger datasets, consider using the `get_ecallisto_data_generator` function.
+This function fetches e-Callisto data within a specified date range and optional instrument regex pattern. It's suitable for smaller datasets. For larger datasets, consider using the `get_isto_data_generator` function.
 
 ## Parameters
 - `start_datetime` (datetime-like): The start date for the file search.
@@ -65,8 +65,8 @@ This function fetches e-Callisto data within a specified date range and optional
 
 ## Example
 ```python
-from ecallisto_ng.data_download.downloader import (
-    get_ecallisto_data,
+from isto_ng.data_download.downloader import (
+    get_isto_data,
 )
 from datetime import datetime
 
@@ -74,11 +74,11 @@ start = datetime(2021, 5, 7, 0, 00, 0)
 end = datetime(2021, 5, 7, 23, 59, 0)
 instrument_name = "Australia-ASSA_01"
 
-dfs = get_ecallisto_data(start, end, instrument_name)
+dfs = get_isto_data(start, end, instrument_name)
 df = dfs[instrument_name] # Returns a dict of pd.Dataframes because instrument_name can also be a substring, e.g. "ASSA".
 ```
 # Getting data via a generator
-## `get_ecallisto_data_generator` Function
+## `get_isto_data_generator` Function
 
 A generator function that yields e-Callisto data one file at a time within a date range. It's ideal for handling large datasets or when working with limited memory.
 
