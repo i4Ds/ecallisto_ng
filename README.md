@@ -23,7 +23,7 @@ Ecallisto NG is a comprehensive Python package tailored for interacting with e-C
 The package is built with Python 3.9<3.13 and primarily uses the Pandas library for data manipulation. It's core functionality is centered around efficient data processing and visualization. The data provided by e-Callisto is stored in a pandas Dataframe, where the index is the time and the column names are the observed frequencies.
 
 ## PyPI
-Available on PyPI: https://pypi.org/project/isto-ng/
+Available on PyPI: https://pypi.org/project/ecallisto-ng/
 
 ## Installation
 To install this package, use pip for installation. Execute the following command in your terminal with basic functionality, such as plotting and data fetching:
