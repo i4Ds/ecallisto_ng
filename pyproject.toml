@@ -4,12 +4,13 @@ version = "1.2.0"
 authors = [{name = "Vincenzo Timmel", email = "vincenzo.timmel@fhnw.ch"}]
 description = "A Python package for the fetching (and some processing and plotting) of eCallisto data based on request and pandas."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 
 requires-python = ">=3.10"
 
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -27,6 +28,8 @@ dependencies = [
     'astropy',
     'tqdm',
     "flake8>=7.3.0",
+    "twine>=7.0.0",
+    "build>=1.6.1",
 ]
 [project.optional-dependencies]
 nb = ['nbformat', 'ipython', 'ipykernel']
@@ -41,7 +44,7 @@ testpaths = [
     "tests"
 ]
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
