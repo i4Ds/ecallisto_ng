@@ -66,7 +66,7 @@ This function fetches e-Callisto data within a specified date range and optional
 ## Example
 ```python
 from ecallisto_ng.data_download.downloader import (
-    get_isto_data,
+    get_ecallisto_data,
 )
 from datetime import datetime
 
