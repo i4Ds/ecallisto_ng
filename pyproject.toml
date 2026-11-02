@@ -1,13 +1,13 @@
 [project]
 name = "ecallisto-ng"
-version = "1.2.0"
+version = "1.3.0"
 authors = [{name = "Vincenzo Timmel", email = "vincenzo.timmel@fhnw.ch"}]
 description = "A Python package for the fetching (and some processing and plotting) of eCallisto data based on request and pandas."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 
 classifiers = [
     "Programming Language :: Python :: 3",
