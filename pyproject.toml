@@ -30,6 +30,7 @@ dependencies = [
     "flake8>=7.3.0",
     "twine>=7.0.0",
     "build>=1.6.1",
+    "pluggy>=1.7.0",
 ]
 [project.optional-dependencies]
 nb = ['nbformat', 'ipython', 'ipykernel']
