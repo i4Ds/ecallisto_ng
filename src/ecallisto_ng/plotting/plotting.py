@@ -95,9 +95,8 @@ def plot_spectrogram_mpl(
     )
 
     def find_nearest_idx(array: Sequence[float], value: float) -> int:
-        array = np.asarray(array)
-        idx = (np.abs(array - value)).argmin()
-        return idx
+        arr = np.asarray(array)
+        return int(np.abs(arr - value).argmin())
 
     # Target ~8 "nice" frequency ticks, using multiples of 100/10/5 MHz
     # depending on band width.
@@ -297,21 +296,19 @@ def plot_with_fixed_resolution_mpl(
     end_datetime = pd.to_datetime(end_datetime_str)
 
     # Fetch data
-    df = get_ecallisto_data(
+    dfs = get_ecallisto_data(
         start_datetime,
         end_datetime,
         instrument,
         download_from_local=download_from_local,
         verbose=verbose,
     )
-    # Check if it's a dictionary. If it is, take the first key
-    if isinstance(df, dict):
-        if len(df) > 1:
-            Warning(
-                "The dataframe has more than one instrument. Only the first "
-                "instrument will be used."
-            )
-        df = df[list(df.keys())[0]]
+    if len(dfs) > 1:
+        Warning(
+            "The dataframe has more than one instrument. Only the first "
+            "instrument will be used."
+        )
+    df = next(iter(dfs.values()), pd.DataFrame())
 
     if len(df) == 0:
         print(NoDataAvailable)

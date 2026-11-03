@@ -12,7 +12,7 @@ from ecallisto_ng.data_download.hu_dataset import (
 )
 
 
-def test_create_overlapping_parquets_and_load():
+def test_create_overlapping_parquets_and_load() -> None:
     start_date = datetime(2024, 1, 1, 11, 0, 0)
     end_date = datetime(2024, 1, 1, 12, 0, 0)
     instruments = ["GERMANY-DLR_63"]

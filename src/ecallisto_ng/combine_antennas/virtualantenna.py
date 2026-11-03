@@ -121,7 +121,8 @@ class EcallistoVirtualAntenna:
         )
         print("Matching and syncing the spectrograms.")
         synced_data, ref_idx = self._sync_and_match(data_binned)
-        print(f"Reference spectrogram is {dfs[ref_idx].attrs['INSTRUME']}.")
+        if ref_idx is not None:
+            print(f"Reference spectrogram is {dfs[ref_idx].attrs['INSTRUME']}.")
         return synced_data, ref_idx
 
     @staticmethod

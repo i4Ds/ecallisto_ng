@@ -18,7 +18,7 @@ def get_tables(verbose: bool = False) -> list[str]:
     response = requests.get(BASE_URL + "/api/tables")
 
     if response.status_code == 200:
-        table_names = response.json()["tables"]
+        table_names: list[str] = response.json()["tables"]
         if verbose:
             print(f"Received table names: {table_names}")
         return table_names
@@ -54,7 +54,7 @@ def get_table_names_with_data_between_dates(
     response = requests.post(BASE_URL + "/api/data_availability", json=data)
 
     if response.status_code == 200:
-        table_names = response.json()["table_names"]
+        table_names: list[str] = response.json()["table_names"]
         if verbose:
             print(f"Received table names: {table_names}")
         return table_names
@@ -126,7 +126,7 @@ def check_table_data_availability(
     response = requests.post(BASE_URL + "/api/table_data_check", json=data)
 
     if response.status_code == 200:
-        has_data = response.json()["has_data"]
+        has_data = bool(response.json()["has_data"])
         if verbose:
             print(
                 f"Table '{instrument_name}' has data between {start_datetime} "

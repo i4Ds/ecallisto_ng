@@ -79,8 +79,8 @@ def get_ecallisto_data(
             f"and {end_datetime}."
         )
         return {}
-    dfs = download_fits_process_to_pandas(file_urls, verbose)
-    dfs = concat_dfs_by_instrument(dfs, verbose)
+    dfs_list = download_fits_process_to_pandas(file_urls, verbose)
+    dfs = concat_dfs_by_instrument(dfs_list, verbose)
     dfs = filter_dataframes(
         dfs,
         start_datetime,
@@ -100,7 +100,7 @@ def get_ecallisto_data_generator(
     freq_end: float | None = None,
     verbose: bool = False,
     base_url: str = BASE_URL,
-) -> Generator[tuple[str, pd.DataFrame], None, dict[str, pd.DataFrame] | None]:
+) -> Generator[tuple[str, pd.DataFrame], None, None]:
     """
     Generator function to yield e-Callisto data one file at a time within a date range.
     It returns a tuple with (instrument_name, dataframe)
@@ -160,10 +160,10 @@ def get_ecallisto_data_generator(
                 f"No files found for {instrument_name} between {start_datetime} "
                 f"and {end_datetime}."
             )
-            return {}
+            return
         try:
-            dfs = download_fits_process_to_pandas(file_urls)
-            dfs = concat_dfs_by_instrument(dfs)
+            dfs_list = download_fits_process_to_pandas(file_urls)
+            dfs = concat_dfs_by_instrument(dfs_list)
             dfs = filter_dataframes(
                 dfs,
                 start_datetime,
@@ -183,7 +183,7 @@ def get_instrument_with_available_data(
     start_date: datetime | pd.Timestamp | None = None,
     end_date: datetime | pd.Timestamp | None = None,
     instrument_name: str | None = None,
-) -> list[str] | dict[str, pd.DataFrame]:
+) -> list[str]:
     """Retrieve sorted list of unique instrument names with available data in a
     specified date range.
 
@@ -232,7 +232,7 @@ def get_instrument_with_available_data(
         print(
             f"No files found for {instrument_name} between {start_date} and {end_date}."
         )
-        return {}
+        return []
     instrument_names = [extract_instrument_name(file_url) for file_url in file_urls]
     return sorted(list(set(instrument_names)))
 
@@ -289,7 +289,7 @@ def fetch_fits_to_pandas(
     try:
         fits_file = fits.open(file_url, cache=False)
         df = ecallisto_fits_to_pandas(fits_file)
-        df.attrs["ANTENNAID"] = extract_instrument_name(file_url)[-2:]
+        df.attrs["ANTENNAID"] = extract_instrument_name(os.fspath(file_url))[-2:]
         return df
     except Exception as e:
         if verbose:
@@ -368,10 +368,10 @@ def get_remote_files_url(
         results = map(fetch_date_files, date_urls)
 
     # Flatten the results
-    results = [item for sublist in results for item in sublist]
+    all_file_urls = [item for sublist in results for item in sublist]
 
     glob_pattern = instrument_name_to_globbing_pattern(instrument_name)
-    file_urls = fnmatch.filter(results, glob_pattern)
+    file_urls = fnmatch.filter(all_file_urls, glob_pattern)
 
     # Extact datetime from filename
     file_datetimes = [
@@ -382,7 +382,8 @@ def get_remote_files_url(
     file_urls = [
         file_url
         for file_url, file_datetime in zip(file_urls, file_datetimes)
-        if start_date - timedelta(minutes=15)
+        if file_datetime is not None
+        and start_date - timedelta(minutes=15)
         <= file_datetime
         <= end_date + timedelta(minutes=15)
     ]  # Timedelta because a file contains up to 15 minutes of data
@@ -427,7 +428,8 @@ def get_local_file_paths(
             file_datetime = extract_datetime_from_filename(file_path)
             # Check if the file's datetime is within the range
             if (
-                start_date - timedelta(minutes=15)
+                file_datetime is not None
+                and start_date - timedelta(minutes=15)
                 <= file_datetime
                 <= end_date + timedelta(minutes=15)
             ):

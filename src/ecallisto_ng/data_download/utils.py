@@ -32,16 +32,16 @@ def filter_dataframes(
     if verbose:
         print("Filtering dataframes by time....")
     for instrument, df in dfs.items():
-        dfs[instrument] = df.loc[start_date:end_date]
+        dfs[instrument] = df.loc[slice(start_date, end_date)]
 
     if verbose and (freq_start or freq_end):
         print("Filtering frequencies....")
     if freq_start:
         for instrument, df in dfs.items():
-            dfs[instrument] = df.loc[:, freq_start:freq_end]
+            dfs[instrument] = df.loc[:, slice(freq_start, freq_end)]
     if freq_end:
         for instrument, df in dfs.items():
-            dfs[instrument] = df.loc[:, freq_start:freq_end]
+            dfs[instrument] = df.loc[:, slice(freq_start, freq_end)]
 
     # Check if any dfs are empty
     empty_instruments = []

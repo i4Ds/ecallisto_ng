@@ -69,7 +69,7 @@ def get_data(
             "Readme for more information."
         )
     )
-    data = {
+    data: dict[str, Any] = {
         "instrument_name": instrument_name,
         "start_datetime": start_datetime,
         "end_datetime": end_datetime,
@@ -193,10 +193,11 @@ def get_data(
                 time.sleep(3)
     else:
         print(f"Error starting data retrieval: {response.status_code}")
+    return None
 
 
 def read_parquet_and_meta_data(file_path: str | PathLike[str]) -> pd.DataFrame:
-    meta_data_path = file_path.replace(".parquet", ".json")
+    meta_data_path = os.fspath(file_path).replace(".parquet", ".json")
     df = pd.read_parquet(file_path)
     with open(meta_data_path, "r") as f:
         meta_data = json.load(f)
@@ -240,9 +241,9 @@ def extract_instrument_name(file_path: str | PathLike[str]) -> str:
     numeric part of the file name if it is less than 6 digits.
     """
     # select last part of path and remove extension
-    file_name_parts = os.path.basename(file_path).split(".")[0]
+    file_name_stem = os.path.basename(file_path).split(".")[0]
     # replace '-' with '_' and split on '_' to get the parts of the file name
-    file_name_parts = file_name_parts.replace("-", "_").lower().split("_")
+    file_name_parts = file_name_stem.replace("-", "_").lower().split("_")
     file_name = ""
     for part in file_name_parts:
         if not part.isnumeric():

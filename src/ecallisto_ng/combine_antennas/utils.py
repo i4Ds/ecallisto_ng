@@ -58,8 +58,8 @@ def make_frequencies_match_spectrograms(
     Returns ------- List[pd.DataFrame]     List of DataFrames with matching
     frequency columns.
     """
-    all_columns = sorted(list(set(float(col) for df in dfs for col in df.columns)))
-    all_columns = [str(col) for col in all_columns]
+    all_freqs = sorted(set(float(col) for df in dfs for col in df.columns))
+    all_columns = [str(col) for col in all_freqs]
     new_dfs = [interpolate_columns(df, all_columns) for df in dfs]
     return new_dfs
 
@@ -77,7 +77,7 @@ def get_max_cross_corr_shift(spec1: pd.DataFrame, spec2: pd.DataFrame) -> int:
     cross_corr = np.correlate(
         spec1.sum(axis=1).values, spec2.sum(axis=1).values, mode="full"
     )
-    return cross_corr.argmax() - (len(spec1) - 1)
+    return int(cross_corr.argmax()) - (len(spec1) - 1)
 
 
 def get_cross_corr_matrix(specs: Sequence[pd.DataFrame]) -> np.ndarray:

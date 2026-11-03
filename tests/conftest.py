@@ -3,10 +3,11 @@ from datetime import datetime
 import pytest
 
 from ecallisto_ng.data_download.downloader import get_ecallisto_data
+from ecallisto_ng.data_download.utils import DataFrameByInstrument
 
 
 @pytest.fixture
-def assa01_dataframe():
+def assa01_dataframe() -> DataFrameByInstrument:
     start_datetime = datetime(2021, 5, 7, 0, 00, 0)
     end_datetime = datetime(2021, 5, 7, 23, 59, 0)
 
@@ -19,7 +20,7 @@ def assa01_dataframe():
 
 
 @pytest.fixture
-def small_assa01_dataframe():
+def small_assa01_dataframe() -> DataFrameByInstrument:
     start_datetime = datetime(2021, 5, 7, 3, 00, 0)
     end_datetime = datetime(2021, 5, 7, 3, 59, 0)
 
@@ -32,7 +33,7 @@ def small_assa01_dataframe():
 
 
 @pytest.fixture
-def assa_dataframes():
+def assa_dataframes() -> DataFrameByInstrument:
     start_datetime = datetime(2021, 5, 7, 0, 00, 0)
     end_datetime = datetime(2021, 5, 7, 23, 59, 0)
 
