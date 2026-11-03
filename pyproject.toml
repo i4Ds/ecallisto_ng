@@ -31,6 +31,7 @@ dependencies = [
     "twine>=7.0.0",
     "build>=1.6.1",
     "pluggy>=1.7.0",
+    "pytest>=9.2.0",
 ]
 [project.optional-dependencies]
 nb = ['nbformat', 'ipython', 'ipykernel']
